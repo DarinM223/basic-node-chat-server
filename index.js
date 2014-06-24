@@ -1,6 +1,5 @@
 var express = require('express');
 var app = express();
-var port = 3700;
 var async = require('async');
 
 // include database functions
@@ -83,6 +82,7 @@ app.use(express.static(__dirname + '/public'));
 
 // use socket integration
 //app.listen(port); 
+var port = process.env.PORT || 5000;
 var io = require('socket.io').listen(app.listen(port));
 
 console.log("Listening on port " + port);
