@@ -23,16 +23,14 @@ Installation
 
 ###Tested on: Ubuntu 12.04, Ubuntu 14.04
 
-After you clone the repository, you need to reinstall the node_modules
-folder first:
+After you clone the repository, you need to install all of the dependencies first
 
 (in directory of the cloned repository)
 
-    rm -rf node_modules/
     npm install
 
 Finally, to run the chat server:
 
-    node index.js
+    npm start
 
 Then open the browser and enter http://localhost:3700/

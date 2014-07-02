@@ -2,6 +2,9 @@
         "name": "RealTimeWebChat",
         "version": "0.0.0",
         "description": "Real time web chat",
+        "scripts": {
+            "start": "./node_modules/.bin/supervisor index.js"
+        },
         "dependencies": {
                 "socket.io": "latest",
                 "express": "latest",
@@ -10,7 +13,8 @@
                 "monk": "*",
                 "body-parser": "*",
                 "underscore": "*",
-                "async": "*"
+                "async": "*",
+                "supervisor": "*"
         },
         "author": "developer"
 }
