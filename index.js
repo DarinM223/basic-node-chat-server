@@ -58,7 +58,7 @@ app.post('/adduser', function (req, res) {
         res.send("Username or password is empty");
     }
 
-    //check if username is already taken
+    // check if username is already taken
     database.get_user_count(userName, null, function (err, count) {
         if (err) {
             console.log("There was an error accessing the database!");
@@ -81,8 +81,7 @@ app.post('/adduser', function (req, res) {
 app.use(express.static(__dirname + '/public'));
 
 // use socket integration
-//app.listen(port); 
-var port = process.env.PORT || 5000;
+var port = 3700;
 var io = require('socket.io').listen(app.listen(port));
 
 console.log("Listening on port " + port);
@@ -93,7 +92,7 @@ io.sockets.on('connection', function (socket) {
         for (var i = 0; i < messages.pastMessages.length; i++) {
             socket.emit('message', messages.pastMessages[i]);
         }
-        //if it receives a login request, check database for existing users
+        // if it receives a login request, check database for existing users
         socket.on('login', function (data) {
             var already_registered = false;
             for (var key in sockid_to_username) {
@@ -103,21 +102,23 @@ io.sockets.on('connection', function (socket) {
                 }
             }
             if (already_registered) {
-                socket.emit('message', { message: 'You have already logged in' });
+                socket.emit('login-response', { error: 'You have already logged in' });
             } else {
+                // TODO: Use async.waterfall for nested callback
                 database.get_user_count(data.username, data.password, function (err, count) {
                     if (err) {
                         console.log("There was an error accessing the database!");
                     } else if (count > 0) {
                         socket.join('registered');
                         sockid_to_username[socket.id] = data.username;
+                        socket.emit('login-response', { response: 'OK' });
                         io.sockets.emit('userlogin', { username: data.username });
                     } else {
                         database.get_user_count(data.username, null, function (err, count) {
                             if (count && count > 0) {
-                                socket.emit('message', { message: 'Your username or password was incorrect' });
+                                socket.emit('login-response', { error: 'Your username or password was incorrect' });
                             } else {
-                                socket.emit('message', { message: "You haven't signed up yet" });
+                                socket.emit('login-response', { error: "You haven't signed up yet" });
                             }
                         });
                     }
@@ -134,20 +135,21 @@ io.sockets.on('connection', function (socket) {
             } else if (userName.trim() === "" || userPwd.trim() === "") {
                 socket.emit('signup-response', { response: "Username or password is empty" });
             } else {
-                //check if username is already taken
+                // TODO: Use async.waterfall for nested callback
+                // check if username is already taken
                 database.get_user_count(userName, null, function (err, count) {
                     if (err) {
                         console.log("There was an error accessing the database!");
                     } else if (count <= 0) {
                         database.insert_user(userName, userPwd, function (err, doc) {
                             if (err) {
-                                socket.emit('signup-response', { response: "There was a problem adding the information to the database" } );
+                                socket.emit('signup-response', { error: "There was a problem adding the information to the database" } );
                             } else {
                                 socket.emit('signup-response', { response: "OK" });
                             }
                         });
                     } else {
-                        socket.emit('signup-response', { response: "There is already an account with this username" });
+                        socket.emit('signup-response', { error: "There is already an account with this username" });
                     }
                 });
             }
@@ -170,7 +172,7 @@ io.sockets.on('connection', function (socket) {
                 io.sockets.emit('message', data);
                 messages.add_message(data);
             } else {
-                socket.emit('message', { message: 'You have to login before chatting' });
+                socket.emit('message', { error: 'You have to login before chatting' });
             }
         });
 
@@ -186,12 +188,11 @@ io.sockets.on('connection', function (socket) {
                         socket.emit('message', data);
                         sent_message = true;
                     }
-
                 }
                 if (!sent_message)
-                   socket.emit('message', { message: 'User is either not online or does not exist' });
+                   socket.emit('message', { error: 'User is either not online or does not exist' });
             } else {
-                socket.emit('message', { message: 'You have to login before chatting' });
+                socket.emit('message', { error: 'You have to login before chatting' });
             }
         });
 
