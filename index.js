@@ -3,7 +3,9 @@ var app = express();
 var async = require('async');
 
 // include database functions
-var database = require('./database.js');
+var _database = require('./database.js');
+
+var database = new _database('localhost:27017/mydb', 'users');
 
 // so you can find current username using the socket
 var sockid_to_username = {};

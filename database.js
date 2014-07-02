@@ -1,16 +1,18 @@
 //Database setup
 var mongo = require('mongodb');
 var monk = require('monk');
-var db = monk('localhost:27017/mydb');
-var database = {};
+var database = function(connection_url, user_collection_name) {
+    //var db = monk('localhost:27017/mydb');
+    var db = monk(connection_url);
+    this.user_collection = db.get(user_collection_name);
+};
 
 // gets number of users with the username/password in the database
-database.get_user_count = function(username, encrypted_password, callback) {
-    var collection = db.get('users');
+database.prototype.get_user_count = function(username, encrypted_password, callback) {
     // TODO: unencrypt password
     var password = encrypted_password;
     if (password) {
-        collection.find({
+        this.user_collection.find({
                 "username": username,
                 "password": password
         }, function (err, docs) {
@@ -21,7 +23,7 @@ database.get_user_count = function(username, encrypted_password, callback) {
             }
         });
     } else {
-        collection.find({
+        this.user_collection.find({
                 "username": username
         }, function (err, docs) {
             if (err) {
@@ -34,11 +36,10 @@ database.get_user_count = function(username, encrypted_password, callback) {
 }
 
 // inserts user in database
-database.insert_user = function (username, encrypted_password, callback) {
-    var collection = db.get('users');
+database.prototype.insert_user = function (username, encrypted_password, callback) {
     // TODO: unencrypt password
     var password = encrypted_password;
-    collection.insert({
+    this.user_collection.insert({
             "username": username,
             "password": password
     }, function (err, doc) {
