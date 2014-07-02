@@ -21,7 +21,7 @@ Installation
 
 ###Requirements: mongodb
 
-###Tested on: Ubuntu 12.04, Ubuntu 14.04
+###Tested on: Ubuntu 12.04, Ubuntu 14.04, Windows 8 64-bit
 
 After you clone the repository, you need to install all of the dependencies first
 
@@ -31,6 +31,28 @@ After you clone the repository, you need to install all of the dependencies firs
 
 Finally, to run the chat server:
 
-    npm start
+    node index.js
 
 Then open the browser and enter http://localhost:3700/
+
+There are other options to run the server. If you run the server using the
+**supervisor** plugin you won't need to restart the server whenever you make changes
+to the node javascript files. To do that enter:
+
+    For Ubuntu:
+    npm start
+    For Windows:
+    node_modules\.bin\supervisor index.js
+
+Testing
+-------
+
+To run all of the unit tests, enter:
+
+    For Ubuntu:
+    npm test
+    For Windows:
+    node_modules\.bin\mocha
+
+Make sure that Mongodb is running before running the tests, since they need a sample
+database to test login/signup functionality.
