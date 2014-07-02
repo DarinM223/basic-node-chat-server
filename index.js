@@ -86,6 +86,11 @@ app.use(express.static(__dirname + '/public'));
 var port = 3700;
 var io = require('socket.io').listen(app.listen(port));
 
+// uses a test database for debugging
+exports.setDebugging = function () {
+    database = new _database('localhost:27017/test', 'users');
+}
+
 console.log("Listening on port " + port);
 
 // socket passed in function (socket) is the client's socket
@@ -133,9 +138,9 @@ io.sockets.on('connection', function (socket) {
             var userPwd = data.password;
 
             if (userName == null || userPwd == null) {
-                socket.emit('signup-response', { response: "Username or password is empty" });
+                socket.emit('signup-response', { error: "Username or password is empty" });
             } else if (userName.trim() === "" || userPwd.trim() === "") {
-                socket.emit('signup-response', { response: "Username or password is empty" });
+                socket.emit('signup-response', { error: "Username or password is empty" });
             } else {
                 // TODO: Use async.waterfall for nested callback
                 // check if username is already taken
