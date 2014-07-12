@@ -1,0 +1,19 @@
+doctype html
+html(ng-app='chatApp')
+  head
+    meta(charset='utf8')
+    title Real time web chat
+    link(rel='stylesheet', href='css/bootstrap.min.css')
+    link(rel='stylesheet', href='css/styles.css')
+    script(src='http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js', type='text/javascript')
+    script(src='http://ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular.min.js', type = 'text/javascript')
+    script(src='http://ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular-route.min.js')
+    script(src='/socket.io/socket.io.js', type='text/javascript')
+    script(src='js/controller.js', type='text/javascript')
+  body(ng-controller='listControl')
+    div.container
+      block header
+      block body
+      block footer
+    block modalLogin
+    block modalSignup

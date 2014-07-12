@@ -1,0 +1,14 @@
+#chatbox {
+  width: 60%;
+  height: 600px;
+  overflow: auto;
+  display: inline-block;
+  float: left;
+}
+
+#userList {
+  width: 40%;
+  float: right;
+}
+
+

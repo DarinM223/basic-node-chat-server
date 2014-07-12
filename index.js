@@ -51,11 +51,11 @@ app.engine('jade', require('jade').__express);
 
 // set up server that renders the page when a request is made
 app.get("/", function (req, res) {
-  res.render("chat");
+  res.render("index");
 });
 
 // display the form to add new user
-app.get("/newuser", function (req, res) {
+app.get('/newuser', function (req, res) {
   res.render('newuser', { title: 'Add new User' });
 });
 
@@ -217,7 +217,7 @@ io.sockets.on('connection', function (socket) {
       io.sockets.emit('userlogout', { username: disconnected_uname });
     }
   });
-});
+}); // io.sockets.on('connection', function (socket) {
 
 // uses a test database for debugging
 module.exports.setDebugging = function () {
