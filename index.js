@@ -156,7 +156,7 @@ io.sockets.on('connection', function (socket) {
             if (err) {
               socket.emit('signup-response', { error: "There was a problem adding the information to the database" } );
             } else {
-              socket.emit('signup-response', { response: "OK" });
+              socket.emit('signup-response', { response: "OK", username: userName, password: userPwd });
             }
           });
         } else {
@@ -181,28 +181,25 @@ io.sockets.on('connection', function (socket) {
   socket.on('send', function (data) {
     //if the socket is registered, send the message
     if (sockid_to_username[socket.id]) {
-      io.sockets.emit('message', data);
-      messages.add_message(data);
-    } else {
-      socket.emit('message', { error: 'You have to login before chatting' });
-    }
-  });
-
-  // when client wants to send private message, find the client where it has to be sent
-  socket.on('send-private', function (data) {
-    if (sockid_to_username[socket.id]) {
-      var sent_message = false;
-      for (var key in sockid_to_username) {
-        // if socket id's mapped username matches the client to receive the message
-        if (sockid_to_username[key] === data.receiver) {
-          // send to that socket and your socket
-          socket.to(key).emit('message', data);
-          socket.emit('message', data);
-          sent_message = true;
+      if (!data.receiver) {
+        // public message
+        io.sockets.emit('message', data);
+        messages.add_message(data);
+      } else {
+        // private message
+        var sent_message = false;
+        for (var key in sockid_to_username) {
+          // if socket id's mapped username matches the client to receive the message
+          if (sockid_to_username[key] === data.receiver) {
+            // send to that socket and your socket
+            socket.to(key).emit('message', data);
+            socket.emit('message', data);
+            sent_message = true;
+          }
         }
-      }
-      if (!sent_message) {
-        socket.emit('message', { error: 'User is either not online or does not exist' });
+        if (!sent_message) {
+          socket.emit('message', { error: 'User is either not online or does not exist' });
+        }
       }
     } else {
       socket.emit('message', { error: 'You have to login before chatting' });

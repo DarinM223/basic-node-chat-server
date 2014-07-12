@@ -55,6 +55,8 @@ chatApp.controller('listControl', ['$scope', 'socket', function ($scope, socket)
     $scope.hiddenUsers = {};
     $scope.selectedIndex = -1;
     $scope.my_username = null;
+    $scope.loginWarning = '';
+    $scope.signupWarning = '';
 
     // grab current list of users at the start
     socket.emit('list');
@@ -112,8 +114,19 @@ chatApp.controller('listControl', ['$scope', 'socket', function ($scope, socket)
       // if login successful, change current username, otherwise push error message
       if (data.username) {
         $scope.my_username = data.username;
+        $('#modalLogin').modal('hide');
       } else {
-        $scope.messageList.unshift(data);
+        //$scope.messageList.unshift(data);
+        $scope.loginWarning = data.error;
+      }
+    });
+
+    socket.on('signup-response', function(data) {
+      if (!data.error) {
+        loginUser(data.username, data.password);
+        $('#modalSignup').modal('hide');
+      } else {
+        $scope.signupWarning = data.error;
       }
     });
 

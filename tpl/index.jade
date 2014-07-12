@@ -74,10 +74,9 @@ block modalLogin
             input#loginUsername.form-control(type='text', placeholder='username', ng-model='loginUsername')
             input#loginPassword.form-control(type='password', placeholder='password', ng-model='loginPassword')
         div.modal-footer
-          span.warningMessage(ng-model='loginWarning')
+          span.warningMessage {{loginWarning}} &nbsp;
           // call onLogin when button clicked
           button#loginButton.btn.btn-primary(type='button'
-            data-dismiss='modal'
             aria-hidden='true'
             ng-click='onLogin(loginUsername, loginPassword)') Login
 
@@ -94,9 +93,8 @@ block modalSignup
             input#signupPassword.form-control(type='password', placeholder='password', ng-model='signupPassword')
             input#signupPasswordReenter.form-control(type='password', placeholder='reenter password', ng-model='signupPasswordReenter')
         div.modal-footer
-          span.warningMessage(ng-model='signupWarning')
+          span.warningMessage {{signupWarning}} &nbsp;
           // call onSignup when button clicked
           button#signupButton.btn.btn-primary(type='button'
-            data-dismiss='modal'
             aria-hidden='true'
             ng-click='onSignup(signupUsername, signupPassword, signupPasswordReenter)') Signup
