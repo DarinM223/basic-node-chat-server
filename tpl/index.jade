@@ -16,9 +16,26 @@ block header
             a(href='#', data-toggle='modal', data-target='#modalLogin') Login
           li
             a(href='#', data-toggle='modal', data-target='#modalSignup') Signup
+        form.navbar-form.navbar-left
+          input.form-control.col-lg-8(type='text', placeholder='Search messages by: ', ng-model='search')
+        ul.nav.navbar-nav.navbar-left
+          li.dropdown
+            a.dropdown-toggle(href='#', data-toggle='dropdown') 
+              | {{dropdownText}}
+              b.caret
+            ul.dropdown-menu
+              li
+                a(href='#' ng-click='dropdownText="Message text"') Message text
+              li
+                a(href='#' ng-click='dropdownText="Sender"') Sender
         ul.nav.navbar-nav.navbar-right
           li
-            a#loggedin(href='#' ng-show='my_username') Logged in as {{my_username}}
+            a#loggedin.dropdown-toggle(href='#' ng-show='my_username' data-toggle='dropdown') 
+              | Logged in as {{my_username}}
+              b.caret
+            ul.dropdown-menu
+              li
+                a(href='#' ng-click='onLogout()') Logout
 
 block body
   br
@@ -39,7 +56,10 @@ block body
     div.row
       div#chatbox.span4
         // use function messageColorSelect to determine the color of the messages
-        div.alert.alert-dismissable.fade.in(ng-repeat='message in messageList', ng-class='messageColorSelect(message)')
+        // filter messages with the matchMessage function with search being the ng-model of the input text
+        div.alert.alert-dismissable.fade.in(ng-repeat='message in messageList | filter:matchMessage(search)'
+          ng-class='messageColorSelect(message)')
+
           button.close(type='button', data-dismiss='alert', ng-click='removeMessage($index)') x
           // use function labelColorSelect to determine color of label
           // and function labelNameSelect to determine name of label 

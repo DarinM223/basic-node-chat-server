@@ -8,6 +8,8 @@
 
 #userList {
   width: 40%;
+  height: 600px;
+  overflow: auto;
   float: right;
 }
 

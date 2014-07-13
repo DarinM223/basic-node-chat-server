@@ -27,6 +27,10 @@ chatApp.factory('socket', function ($rootScope) {
           }
         });
       });
+    }, 
+    restart: function() {
+      socket.io.disconnect();
+      socket.io.reconnect();
     }
   };
 });
@@ -57,6 +61,7 @@ chatApp.controller('listControl', ['$scope', 'socket', function ($scope, socket)
     $scope.my_username = null;
     $scope.loginWarning = '';
     $scope.signupWarning = '';
+    $scope.dropdownText = 'Message text';
 
     // grab current list of users at the start
     socket.emit('list');
@@ -130,7 +135,23 @@ chatApp.controller('listControl', ['$scope', 'socket', function ($scope, socket)
       }
     });
 
-    // TODO: Implement 'signup-response'
+    $scope.matchMessage = function(query) {
+      return function(message) {
+        if ($scope.dropdownText === 'Message text') {
+          if (message.message) {
+            return message.message.match(query);
+          } else {
+            return message.error.match(query);
+          }
+        } else {
+          if (message.username) {
+            return message.username.match(query);
+          } else {
+            return 'Server'.match(query);
+          }
+        }
+      };
+    };
 
     /**
      * @param {string} chatMessage
@@ -193,6 +214,11 @@ chatApp.controller('listControl', ['$scope', 'socket', function ($scope, socket)
         loginUser(username, password);
       }
       $scope.clearFields();
+    };
+
+    $scope.onLogout = function() {
+      $scope.my_username = null;
+      socket.restart();
     };
 
     /**
