@@ -4,10 +4,9 @@ var io = require('socket.io-client');
 var async = require('async');
 
 var socketURL = 'http://localhost:3700';
-
 var _database = require('../database.js');
 
-var database = new _database('localhost:27017/test', 'users');
+var database = new _database('mongodb://localhost:27017/test', true);
 
 var server = require('../index.js');
 server.setDebugging();
@@ -20,11 +19,11 @@ var options = {
 describe('Chat Server', function () {
   var client1, client2, client3;
   beforeEach(function(done) {
-    database.user_collection.remove({});
+    database.clearUsers();
     done();
   });
   afterEach(function(done) {
-    database.user_collection.remove({});
+    database.clearUsers();
     if (client1) {
       client1.disconnect();
     }
@@ -102,7 +101,8 @@ describe('Chat Server', function () {
         });
         client1.on('login-response', function (data) {
           if (testNum === 1) {
-            data.error.should.equal("You haven't signed up yet");
+            //data.error.should.equal("You haven't signed up yet");
+            data.error.should.equal('Your username or password was incorrect');
             console.log('Test #1 passed');
             testNum++;
             client1.emit('signup', { username: 'test_user', password: 'hello' });

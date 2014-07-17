@@ -1,13 +1,15 @@
 'use strict';
-
 var express = require('express');
 var app = express();
 var async = require('async');
 
 // include database functions
 var _database = require('./database.js');
+var database = new _database('mongodb://localhost:27017/mydb', false);
 
-var database = new _database('localhost:27017/mydb', 'users');
+exports.setDebugging = function() {
+  database = new _database('mongodb://localhost:27017/test', false);
+};
 
 // so you can find current username using the socket
 var sockid_to_username = {};
@@ -59,36 +61,6 @@ app.get('/newuser', function (req, res) {
   res.render('newuser', { title: 'Add new User' });
 });
 
-// handle the add user post request
-app.post('/adduser', function (req, res) {
-  // req.body instead of req.query in express 3.0
-  var userName = req.body.username;
-  // should be encrypted 
-  var userPwd = req.body.password;
-
-  if (!userName || !userPwd) {
-    res.send("Username or password is empty");
-  }
-
-  // check if username is already taken
-  database.get_user_count(userName, null, function (err, count) {
-    if (err) {
-      console.log("There was an error accessing the database!");
-    } else if (count <= 0) {
-      database.insert_user(userName, userPwd, function (err, doc) {
-        if (err) {
-          res.send("There was a problem adding the information to the database");
-        } else {
-          res.location("/");
-          res.redirect("/");
-        }
-      });
-    } else {
-      res.send("There is already an account with this username");
-    }
-  });
-});
-
 // tell express to find where the public files needed for the html pages are
 app.use(express.static(__dirname + '/public'));
 
@@ -117,22 +89,17 @@ io.sockets.on('connection', function (socket) {
     if (already_registered) {
       socket.emit('login-response', { error: 'You have already logged in' });
     } else {
-      database.get_user_count(data.username, data.password, function (err, count) {
+      // verify user from username and password
+      database.verifyUser(data.username, data.password, function(err, isMatch) {
         if (err) {
-          console.log("There was an error accessing the database!");
-        } else if (count > 0) {
+          console.log('There was an error with the database!');
+        } else if (isMatch) {
           socket.join('registered');
           sockid_to_username[socket.id] = data.username;
           socket.emit('login-response', { username: data.username });
           io.sockets.emit('userlogin', { username: data.username });
         } else {
-          database.get_user_count(data.username, null, function (err, count) {
-            if (count && count > 0) {
-              socket.emit('login-response', { error: 'Your username or password was incorrect' });
-            } else {
-              socket.emit('login-response', { error: "You haven't signed up yet" });
-            }
-          });
+          socket.emit('login-response', { error: 'Your username or password was incorrect' });
         }
       });
     }
@@ -147,20 +114,15 @@ io.sockets.on('connection', function (socket) {
     } else if (userName.trim() === "" || userPwd.trim() === "") {
       socket.emit('signup-response', { error: "Username or password is empty" });
     } else {
-      // check if username is already taken
-      database.get_user_count(userName, null, function (err, count) {
+      // insert new user
+      database.insertUser(userName, userPwd, function(err, result) {
         if (err) {
-          console.log("There was an error accessing the database!");
-        } else if (count <= 0) {
-          database.insert_user(userName, userPwd, function (err, doc) {
-            if (err) {
-              socket.emit('signup-response', { error: "There was a problem adding the information to the database" } );
-            } else {
-              socket.emit('signup-response', { response: "OK", username: userName, password: userPwd });
-            }
-          });
+          console.log(err);
+          console.log('There was an error accessing the database!');
+        } else if (result === true) {
+          socket.emit('signup-response', { response: 'OK', username: userName, password: userPwd });
         } else {
-          socket.emit('signup-response', { error: "There is already an account with this username" });
+          socket.emit('signup-response', { error: 'There is already an account with this username' });
         }
       });
     }
@@ -215,8 +177,3 @@ io.sockets.on('connection', function (socket) {
     }
   });
 }); // io.sockets.on('connection', function (socket) {
-
-// uses a test database for debugging
-module.exports.setDebugging = function () {
-  database = new _database('localhost:27017/test', 'users');
-};

@@ -7,18 +7,19 @@
             "test": "./node_modules/.bin/mocha"
         },
         "dependencies": {
-                "socket.io": "latest",
-                "express": "latest",
-                "jade": "latest",
+                "socket.io": "*",
+                "express": "*",
+                "jade": "*",
                 "mongodb": "*",
-                "monk": "*",
                 "body-parser": "*",
                 "underscore": "*",
                 "async": "*",
                 "supervisor": "*",
                 "should": "*",
-                "socket.io-client": "latest",
-                "mocha": "latest"
+                "socket.io-client": "*",
+                "mocha": "*",
+                "bcrypt": "*", 
+                "mongoose": "*"
         },
         "author": "developer"
 }

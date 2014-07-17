@@ -2,64 +2,113 @@
 
 //Database setup
 var mongo = require('mongodb');
-var monk = require('monk');
-var database = function(connection_url, user_collection_name) {
-  var db = monk(connection_url);
-  this.user_collection = db.get(user_collection_name);
-};
+var mongoose = require('mongoose');
+var encryption = require('./encryption.js');
 
-/**
- * gets number of users with the username/password in the database
- * @param {string} username
- * @param {string} encrypted_password
- * @param {function(err, number} callback 
- */
-database.prototype.get_user_count = function(username, encrypted_password, callback) {
-  // TODO: unencrypt password
-  var password = encrypted_password;
-  if (password) {
-    this.user_collection.find({
-      "username": username,
-      "password": password
-    }, function (err, docs) {
-      if (err) {
-        callback(err, null);
-      } else {
-        callback(null, docs.length);
-      }
-    });
+var UserSchema = mongoose.Schema({
+  // enforce username uniqueness
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  created: { type: Date, default: Date.now }
+});
+
+UserSchema.pre('save', function(next) {
+  var user = this;
+
+  // only hash password if the password field has been modified
+  if (!user.isModified('password')) {
+    next();
   } else {
-    this.user_collection.find({
-      "username": username
-    }, function (err, docs) {
+    encryption.cryptPassword(user.password, function (err, hash) {
       if (err) {
-        callback(err, null);
+        next(err);
       } else {
-        callback(null, docs.length);
+        user.password = hash;
+        next();
       }
     });
   }
+});
+
+/**
+ * compares a password to the user's hashed password
+ * @param {string} comparePassword
+ * @param {function(err, boolean)} callback
+ * @return {function(err, boolean)}
+ */
+UserSchema.methods.comparePassword = function(comparePassword, callback) {
+  encryption.comparePassword(comparePassword, this.password, function(err, isPasswordMatch) {
+    return callback(err, isPasswordMatch);
+  });
+};
+
+
+var database = function(connectionURL, testing) {
+  this.debugging = false;
+  if (testing) {
+    this.debugging = true;
+  }
+  var connection = mongoose.createConnection(connectionURL);
+  this.User = connection.model('User', UserSchema);
 };
 
 /**
- * inserts user in database
+ * inserts user into database
+ * returns false if there is already an existing user that has the same username
  * @param {string} username
- * @param {string} encrypted_password 
- * @param {function(err, Array.<Object>)} callback
+ * @param {string} password
+ * @param {function(err, boolean)} callback
+ * @return {function(err, boolean)}
  */
-database.prototype.insert_user = function (username, encrypted_password, callback) {
-  // TODO: unencrypt password
-  var password = encrypted_password;
-  this.user_collection.insert({
-    "username": username,
-    "password": password
-  }, function (err, doc) {
-    if (err) {
-      callback(err, null);
-    } else {
-      callback(null, doc);
-    }
+database.prototype.insertUser = function(username, password, callback) {
+  var newUser = new this.User({
+    'username': username,
+    'password': password
   });
+  newUser.save(function(err) {
+    if (err) {
+      // 11000 is uniqueness validation error for new objects
+      // 11001 is uniqueness validation error for existing objects
+      if (11000 === err.code || 11001 === err.code) {
+        return callback(null, false);
+      }
+      return callback(err, null);
+    }
+    return callback(null, true);
+  });
+};
+
+/**
+ * checks the username and password in the database
+ * returns false if user does not exist or password for the user is incorrect
+ * @param {string} username
+ * @param {string} password
+ * @param {function(err, boolean}) callback
+ * @return {function(err, boolean)} 
+ */
+database.prototype.verifyUser = function(username, password, callback) {
+  this.User.findOne({ 'username': username }, function(err, user) {
+    // if the username does not exist, return false
+    if (err || !user) {
+      return callback(null, false);
+    }
+    user.comparePassword(password, function(err, isPasswordMatch) {
+      return callback(err, isPasswordMatch);
+    });
+  });
+};
+
+
+/**
+ * Deletes all users
+ * BE VERY CAREFUL THIS WILL DESTROY ALL USER DATA
+ * <<< ONLY FOR TESTING >>>
+ */
+database.prototype.clearUsers = function() {
+  if (this.debugging === true) {
+    this.User.collection.remove({}, function(err, result) {
+    });
+  }
 };
 
 module.exports = database;
