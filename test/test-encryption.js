@@ -9,7 +9,7 @@ describe('Encryption testing', function () {
       result.should.not.equal('testpassword');
       encryption.comparePassword('testpassword', result, function(err, answer) {
         answer.should.equal(true);
-        done();
+        return done();
       });
     });
   });

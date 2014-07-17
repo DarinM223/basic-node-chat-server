@@ -16,11 +16,11 @@ var options = {
     'force new connection': true
 };
 
-describe('Chat Server', function () {
+describe('Testing Chat Server', function () {
   var client1, client2, client3;
   beforeEach(function(done) {
     database.clearUsers();
-    done();
+    return done();
   });
   afterEach(function(done) {
     database.clearUsers();
@@ -33,112 +33,180 @@ describe('Chat Server', function () {
     if (client3) {
       client3.disconnect();
     }
-    console.log("");
-    done();
+    return done();
   });
 
-  it('What can be done without logging in', function (done) {
-    var testNum = 1;
+  // should send back an error
+  it('Test chatting without logging in', function(done) {
     client1 = io.connect(socketURL, options);
-    client1.on('connect', function (data) {
+    client1.on('connect', function() {
       client2 = io.connect(socketURL, options);
-      client2.on('connect', function (data) {
-        client1.on('message', function (data) {
-          if (testNum === 1) {
-            data.error.should.equal('You have to login before chatting');
-            testNum++;
-            console.log('Test #1 passed');
-            client1.emit('signup', { username: 'test_user', password: 'hello' });
-          }
-        });
-        client1.on('signup-response', function (data) {
-          client1.emit('login', { username: 'test_user', password: 'hello' });
-        });
-        client1.on('login-response', function (data) {
-          client1.emit('send', { message: 'test', username: 'test_user' });
-        });
-        client2.on('message', function (data) {
-          if (testNum === 2) {
-            data.message.should.equal('test');
-            console.log('Test #2 passed');
-            done();
-          }
+      client2.on('connect', function() {
+        client1.on('message', function(data) {
+          data.error.should.equal('You have to login before chatting');
+          return done();
         });
         client1.emit('send', { message: 'test', username: 'test_user' });
       });
     });
   });
 
-  it('Login and signup verification', function (done) {
+  // not logged in client should see public chat message
+  it('Test if not logged in client sees public chat message', function(done) {
     client1 = io.connect(socketURL, options);
-    var testNum = 1;
-    var loginParts = 0;
-    client1.on('connect', function (data) {
+    var messageSent = false;
+    client1.on('signup-response', function () {
+      client1.emit('login', { username: 'test_user', password: 'hello' });
+    });
+    client1.on('login-response', function() {
+      client1.emit('send', { message: 'test', username: 'test_user' });
+      messageSent = true;
+    });
+    client1.on('connect', function() {
       client2 = io.connect(socketURL, options);
-      client2.on('connect', function (data) {
-        client1.on('signup-response', function (data) {
-          if (testNum === 2) {
-            data.response.should.equal("OK");
-            testNum++;
-            console.log('Test #2 passed');
-            client1.emit('signup', { username: 'test_user', password: 'world' });
-          } else if (testNum === 3) {
-            data.error.should.equal("There is already an account with this username");
-            testNum++;
-            console.log('Test #3 passed');
-            client1.emit('signup', { username: '', password: '' });
-          } else if (testNum === 4) {
-            data.error.should.equal("Username or password is empty");
-            testNum++;
-            console.log('Test #4 passed');
-            client1.emit('signup', { username: null, password: null });
-          } else if (testNum === 5) {
-            data.error.should.equal("Username or password is empty");
-            testNum++;
-            console.log('Test #5 passed');
-            client1.emit('login', { username: 'test_user', password: 'world' });
-          }
-        });
-        client1.on('login-response', function (data) {
-          if (testNum === 1) {
-            //data.error.should.equal("You haven't signed up yet");
-            data.error.should.equal('Your username or password was incorrect');
-            console.log('Test #1 passed');
-            testNum++;
-            client1.emit('signup', { username: 'test_user', password: 'hello' });
-          } else if (testNum === 6) {
-            data.error.should.equal("Your username or password was incorrect");
-            testNum++;
-            console.log('Test #6 passed');
-            client1.emit('login', { username: 'test_user', password: 'hello' });
-          } else if (testNum === 7) {
-            if (loginParts === 2) {
-              data.error.should.equal("You have already logged in");
-              console.log('Test #8 passed');
-              done();
-            }
-          }
-        });
+      client2.on('message', function(data) {
+        if (messageSent) {
+          data.message.should.equal('test');
+          return done();
+        }
+      });
+      client2.on('connect', function() {
+        client1.emit('signup', { username: 'test_user', password: 'hello' });
+      });
+    });
+  });
 
-        client1.on('userlogin', function (data) {
-          if (testNum === 7) {
-            data.username.should.equal('test_user');
-            console.log('Test #7 part 1 passed');
-            loginParts++;
-            if (loginParts === 2) 
-              client1.emit('login', { username: 'test_user', password: 'hello' });
-          }
-        });
-        client2.on('userlogin', function (data) {
-          if (testNum === 7) {
-            data.username.should.equal('test_user');
-            console.log('Test #7 part 2 passed');
-            loginParts++;
-            if (loginParts === 2) 
-              client1.emit('login', { username: 'test_user', password: 'hello' });
-          }
-        });
-        client1.emit('login', { username: 'test_user', password: 'hello' });
+  // should send back error
+  it('Test logging in without signing up', function(done) {
+    var messageSent = false;
+    client1 = io.connect(socketURL, options);
+    client1.on('login-response', function(data) {
+      if (messageSent) {
+        data.error.should.equal('Your username or password was incorrect');
+        return done();
+      }
+    });
+    client1.on('connect', function() {
+      client1.emit('login', { username: 'test_user', password: 'hello' });
+      messageSent = true;
+    });
+  });
+
+  // should send back 'OK'
+  it('Test valid signup to see if it works', function(done) {
+    client1 = io.connect(socketURL, options);
+    client1.on('signup-response', function(data) {
+      data.response.should.equal('OK');
+      return done();
+    });
+    client1.on('connect', function() {
+      client1.emit('signup', { username: 'test_user', password: 'hello' });
+    });
+  });
+
+  // should send back error
+  it('Test signing up with a pre existing username', function(done) {
+    var messageSent = false;
+    client1 = io.connect(socketURL, options);
+    client1.on('signup-response', function(data) {
+      if (!messageSent) {
+        data.response.should.equal('OK');
+        client1.emit('signup', { username: 'test_user', password: 'world' });
+        messageSent = true;
+      } else {
+        data.error.should.equal('There is already an account with this username');
+        return done();
+      }
+    });
+    client1.on('connect', function() {
+      client1.emit('signup', { username: 'test_user', password: 'hello' });
+    });
+  });
+
+  // should send back error
+  it('Test signing up with username and password as empty strings', function(done) {
+    client1 = io.connect(socketURL, options);
+    client1.on('signup-response', function(data) {
+      data.error.should.equal('Username or password is empty');
+      return done();
+    });
+    client1.on('connect', function() {
+      client1.emit('signup', { username: '', password: '' });
+    });
+  });
+
+  // should send back error
+  it('Test signing up with username and password as null strings', function(done) {
+    client1 = io.connect(socketURL, options);
+    client1.on('signup-response', function(data) {
+      data.error.should.equal('Username or password is empty');
+      return done();
+    });
+    client1.on('connect', function() {
+      client1.emit('signup', { username: null, password: null });
+    });
+  });
+
+  // should send back error
+  it('Test trying to log in user with wrong password', function(done) {
+    client1 = io.connect(socketURL, options);
+    client1.on('signup-response', function(data) {
+      data.response.should.equal('OK');
+      client1.emit('login', { username: 'test_user', password: 'world' });
+    });
+    client1.on('login-response', function(data) {
+      data.error.should.equal('Your username or password was incorrect');
+      return done();
+    });
+    client1.on('connect', function() {
+      client1.emit('signup', { username: 'test_user', password: 'hello' });
+    });
+  });
+
+  it('Test that other clients get message when client logs in', function(done) {
+    var numberOfClients = 0;
+    client1 = io.connect(socketURL, options);
+    client1.on('signup-response', function() {
+      client1.emit('login', { username: 'test_user', password: 'hello' });
+    });
+    client1.on('userlogin', function() {
+      numberOfClients++;
+      if (numberOfClients >= 2) {
+        return done();
+      }
+    });
+    client1.on('connect', function() {
+      client2 = io.connect(socketURL, options);
+      client2.on('userlogin', function() {
+        numberOfClients++;
+        if (numberOfClients >= 2) {
+          return done();
+        }
+      });
+      client2.on('connect', function() {
+        client1.emit('signup', { username: 'test_user', password: 'hello' });
+      });
+    });
+  });
+
+  // should send back error
+  it('Test logging in as the same user twice on different clients', function(done) {
+    client1 = io.connect(socketURL, options);
+    client1.on('signup-response', function(data) {
+      data.response.should.equal('OK');
+      client1.emit('login', { username: 'test_user', password: 'hello' });
+    });
+    client1.on('login-response', function() {
+        client2.emit('login', { username: 'test_user', password: 'hello' });
+    });
+    client1.on('connect', function() {
+      client2 = io.connect(socketURL, options);
+      client2.on('login-response', function(data) {
+        data.error.should.equal('You have already logged in');
+        return done();
+      });
+      client2.on('connect', function() {
+        client1.emit('signup', { username: 'test_user', password: 'hello' });
       });
     });
   });

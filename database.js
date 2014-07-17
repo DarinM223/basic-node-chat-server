@@ -98,6 +98,17 @@ database.prototype.verifyUser = function(username, password, callback) {
   });
 };
 
+/**
+ * Returns an array of Users for debugging purposes
+ * @param {function(err, Array.<User>)} callback
+ */
+database.prototype.listUsers = function(callback) {
+  this.User.find({}, function(err, docs) {
+    callback(err, docs);
+  });
+};
+
+
 
 /**
  * Deletes all users
