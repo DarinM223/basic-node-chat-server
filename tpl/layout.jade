@@ -10,12 +10,15 @@ html(ng-app='chatApp')
     script(src='http://ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular-route.min.js')
     script(src='/socket.io/socket.io.js', type='text/javascript')
     script(src='js/app.js', type='text/javascript')
+    script(src='js/miscFactory.js', type='text/javascript')
     script(src='js/socketFactory.js', type='text/javascript')
+    script(src='js/loginController.js', type='text/javascript')
     script(src='js/controller.js', type='text/javascript')
-  body(ng-controller='listControl')
-    div.container
+  body
+    div.container(ng-controller='listControl')
       block header
       block body
       block footer
-    block modalLogin
-    block modalSignup
+    div(ng-controller='loginControl')
+      block modalLogin
+      block modalSignup

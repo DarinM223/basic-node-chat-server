@@ -30,7 +30,7 @@ block header
                 a(href='#' ng-click='dropdownText="Sender"') Sender
         ul.nav.navbar-nav.navbar-right
           li
-            a#loggedin.dropdown-toggle(href='#' ng-show='my_username' data-toggle='dropdown') 
+            a#loggedin.dropdown-toggle(href='#' ng-show='$root.my_username' data-toggle='dropdown') 
               | Logged in as {{my_username}}
               b.caret
             ul.dropdown-menu
