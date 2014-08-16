@@ -96,7 +96,7 @@ describe('Testing Chat Server', function () {
   it('Test valid signup to see if it works', function(done) {
     client1 = io.connect(socketURL, options);
     client1.on('signup-response', function(data) {
-      data.response.should.equal('OK');
+      data.username.should.equal('test_user');
       return done();
     });
     client1.on('connect', function() {
@@ -110,7 +110,7 @@ describe('Testing Chat Server', function () {
     client1 = io.connect(socketURL, options);
     client1.on('signup-response', function(data) {
       if (!messageSent) {
-        data.response.should.equal('OK');
+        data.username.should.equal('test_user');
         client1.emit('signup', { username: 'test_user', password: 'world' });
         messageSent = true;
       } else {
@@ -151,7 +151,7 @@ describe('Testing Chat Server', function () {
   it('Test trying to log in user with wrong password', function(done) {
     client1 = io.connect(socketURL, options);
     client1.on('signup-response', function(data) {
-      data.response.should.equal('OK');
+      data.username.should.equal('test_user');
       client1.emit('login', { username: 'test_user', password: 'world' });
     });
     client1.on('login-response', function(data) {
@@ -193,7 +193,7 @@ describe('Testing Chat Server', function () {
   it('Test logging in as the same user twice on different clients', function(done) {
     client1 = io.connect(socketURL, options);
     client1.on('signup-response', function(data) {
-      data.response.should.equal('OK');
+      data.username.should.equal('test_user');
       client1.emit('login', { username: 'test_user', password: 'hello' });
     });
     client1.on('login-response', function() {

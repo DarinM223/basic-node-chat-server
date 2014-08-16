@@ -120,7 +120,7 @@ io.sockets.on('connection', function (socket) {
           console.log(err);
           console.log('There was an error accessing the database!');
         } else if (result === true) {
-          socket.emit('signup-response', { response: 'OK', username: userName, password: userPwd });
+          socket.emit('signup-response', { username: userName });
         } else {
           socket.emit('signup-response', { error: 'There is already an account with this username' });
         }

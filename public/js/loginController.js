@@ -20,6 +20,7 @@ chatApp.controller('loginControl', function($scope, $rootScope, socket, userList
   function signupUser(username, password, callback) {
     socket.emit('signup', { 'username': username, 'password': password }, callback);
   }
+
   socket.on('login-response', function(data) {
     // if login successful, change current username, otherwise push error message
     if (data.username) {
@@ -33,7 +34,6 @@ chatApp.controller('loginControl', function($scope, $rootScope, socket, userList
 
   socket.on('signup-response', function(data) {
     if (!data.error) {
-      loginUser(data.username, data.password);
       $('#modalSignup').modal('hide');
     } else {
       $scope.signupWarning = data.error;
