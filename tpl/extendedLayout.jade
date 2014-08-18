@@ -1,0 +1,78 @@
+extends layout
+
+block header
+  h1 Real time web chat
+  div.navbar.navbar-default(role='navigation', ng-controller='navbarController')
+    div.container-fluid
+      div.navbar-header
+        button.navbar-toggle(type='button', data-toggle='collapse', data-target='#collapseNav')
+          span.sr-only Toggle navigation
+          span.icon-bar
+          span.icon-bar
+          span.icon-bar
+      div#collapseNav.navbar-collapse.collapse.navbar-responsive-collapse
+        ul.nav.navbar-nav
+          li
+            a(href='#', data-toggle='modal', data-target='#modalLogin') Login
+          li
+            a(href='#', data-toggle='modal', data-target='#modalSignup') Signup
+        form.navbar-form.navbar-left
+          input.form-control.col-lg-8(type='text', placeholder='Search messages by: ', ng-model='search')
+        ul.nav.navbar-nav.navbar-left
+          li.dropdown
+            a.dropdown-toggle(href='#', data-toggle='dropdown') 
+              | {{dropdownText}}
+              b.caret
+            ul.dropdown-menu
+              li
+                a(href='#' ng-click='dropdownText="Message text"') Message text
+              li
+                a(href='#' ng-click='dropdownText="Sender"') Sender
+        ul.nav.navbar-nav.navbar-right
+          li
+            a#loggedin.dropdown-toggle(href='#' ng-show='$root.my_username' data-toggle='dropdown') 
+              | Logged in as {{my_username}}
+              b.caret
+            ul.dropdown-menu
+              li
+                a(href='#' ng-click='onLogout()') Logout
+
+block footer
+  script(src='js/misc/bootstrap.min.js')
+
+block modalLogin
+  div#modalLogin.modal.fade(tabindex='-1', aria-labelledby='basicModal', aria-hidden='true')
+    div.modal-dialog
+      div.modal-content
+        div.modal-header
+          button.close(type='button', data-dismiss='modal', aria-hidden='true') x
+          h4.modal-title Please enter username and password:
+        div.modal-body
+          div.form-group
+            input#loginUsername.form-control(type='text', placeholder='username', ng-model='loginUsername')
+            input#loginPassword.form-control(type='password', placeholder='password', ng-model='loginPassword')
+        div.modal-footer
+          span.warningMessage {{loginWarning}} &nbsp;
+          // call onLogin when button clicked
+          button#loginButton.btn.btn-primary(type='button'
+            aria-hidden='true'
+            ng-click='onLogin(loginUsername, loginPassword)') Login
+
+block modalSignup
+  div#modalSignup.modal.fade(tabindex='-1', aria-labelledby='basicModal', aria-hidden='true')
+    div.modal-dialog
+      div.modal-content
+        div.modal-header
+          button.close(type='button', data-dismiss='modal', aria-hidden='true') x
+          h4.modal-title Please enter username and password:
+        div.modal-body
+          div.form-group
+            input#signupUsername.form-control(type='text', placeholder='username', ng-model='signupUsername')
+            input#signupPassword.form-control(type='password', placeholder='password', ng-model='signupPassword')
+            input#signupPasswordReenter.form-control(type='password', placeholder='reenter password', ng-model='signupPasswordReenter')
+        div.modal-footer
+          span.warningMessage {{signupWarning}} &nbsp;
+          // call onSignup when button clicked
+          button#signupButton.btn.btn-primary(type='button'
+            aria-hidden='true'
+            ng-click='onSignup(signupUsername, signupPassword, signupPasswordReenter)') Signup

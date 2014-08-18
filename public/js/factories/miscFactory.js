@@ -5,30 +5,37 @@ chatApp.factory('messageListFactory', function($rootScope) {
   return messageList;
 });
 
+chatApp.factory('chatListFactory', function($rootScope) {
+  var chatList = [];
+  return chatList;
+});
+
 chatApp.factory('userListFactory', function($rootScope) {
-  var userList = {
-    'list': [],
-    'hiddenUsers': {}
-  }; 
-  return userList;
+  var list = [];
+  var hiddenUsers = {};
+  var selectedIndex = -1;
+  return {
+    'list': list,
+    'hiddenUsers': hiddenUsers,
+  };
 });
 
 chatApp.factory('socketService', function($rootScope, socket, 
-    messageListFactory, userListFactory) {
-  var messageList = messageListFactory;
+    chatListFactory, userListFactory) {
+  var chatList = chatListFactory;
   var userList = userListFactory.list;
   var hiddenUsers = userListFactory.hiddenUsers;
 
   socket.on('message', function(data) {
     console.log(data);
-    messageList.unshift(data);
+    chatList.unshift(data);
   });
 
   socket.on('userlogin', function(data) {
     var message = {
       message: data.username + ' has connected to the server'
     };
-    messageList.unshift(message);
+    chatList.unshift(message);
     var notInUserList = true;
 
     for (var i = 0; i < userList.length; i++) {
@@ -46,7 +53,7 @@ chatApp.factory('socketService', function($rootScope, socket,
     var message = {
       message: data.username + ' has disconnected to the server'
     };
-    messageList.unshift(message);
+    chatList.unshift(message);
 
     // remove user from list
     for (var i = 0; i < userList.length; i++) {

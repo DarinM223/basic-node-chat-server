@@ -1,120 +1,60 @@
-extends layout
+extends extendedLayout
 
-block header
-  h1 Real time web chat
-  div.navbar.navbar-default(role='navigation')
-    div.container-fluid
-      div.navbar-header
-        button.navbar-toggle(type='button', data-toggle='collapse', data-target='#collapseNav')
-          span.sr-only Toggle navigation
-          span.icon-bar
-          span.icon-bar
-          span.icon-bar
-      div#collapseNav.navbar-collapse.collapse.navbar-responsive-collapse
-        ul.nav.navbar-nav
-          li
-            a(href='#', data-toggle='modal', data-target='#modalLogin') Login
-          li
-            a(href='#', data-toggle='modal', data-target='#modalSignup') Signup
-        form.navbar-form.navbar-left
-          input.form-control.col-lg-8(type='text', placeholder='Search messages by: ', ng-model='search')
-        ul.nav.navbar-nav.navbar-left
-          li.dropdown
-            a.dropdown-toggle(href='#', data-toggle='dropdown') 
-              | {{dropdownText}}
-              b.caret
-            ul.dropdown-menu
-              li
-                a(href='#' ng-click='dropdownText="Message text"') Message text
-              li
-                a(href='#' ng-click='dropdownText="Sender"') Sender
-        ul.nav.navbar-nav.navbar-right
-          li
-            a#loggedin.dropdown-toggle(href='#' ng-show='$root.my_username' data-toggle='dropdown') 
-              | Logged in as {{my_username}}
-              b.caret
-            ul.dropdown-menu
-              li
-                a(href='#' ng-click='onLogout()') Logout
+block sendChatInput
+  div.row(ng-controller='sendChatControl')
+    div.form-group
+      div.input-group
+        // call onSend when enter is pressed while in text input
+        input#chatField.form-control(type='text'
+          style='display: inline-block;'
+          placeholder='type here to chat'
+          ng-model='chatInput'
+          ng-enter='onSend(chatInput)')
+        span.input-group-btn
+          // call onSend when clicked
+          button#sendButton.btn.btn-primary(type='button', ng-click='onSend(chatInput)') Send
 
+block messageBox
+  div.row
+    div.alert.alert-dismissable.alert-danger.fade.in(ng-repeat='message in messageList')
+      button.close(type='button', data-dismiss='alert') x
+      {{ message }}
+
+block chatbox
+  div#chatbox.span4(ng-controller='chatBoxControl')
+    // use function messageColorSelect to determine the color of the messages
+    // filter messages with the matchMessage function with search being the ng-model of the input text
+    div.alert.alert-dismissable.fade.in(ng-repeat='chat in chatList | filter:matchChatMessage(search)'
+      ng-class='chatMessageColorSelect(chat)')
+
+      button.close(type='button', data-dismiss='alert', ng-click='removeChatMessage($index)') x
+      // use function labelColorSelect to determine color of label
+      // and function labelNameSelect to determine name of label 
+      span.label(ng-class='labelColorSelect(chat.username)') 
+        | {{ labelNameSelect(chat.username) }}
+      span.label(ng-class='labelColorSelect(chat.receiver)' ng-if='chat.receiver') 
+        | {{ labelNameSelect(chat.receiver) }}
+
+      span(ng-if='chat.message') 
+        | {{chat.message}}
+
+block userList
+  div#userList.list-group(ng-controller='userListControl')
+    // highlight selected user based on selectedIndex and hide hidden users based on isUserHidden function
+    // call userClicked when list item clicked
+    a.list-group-item.user_list(href='#'
+      ng-repeat='user in userList'
+      ng-class='{active: $index === $root.selectedIndex }'
+      ng-if='!isUserHidden(userList[$index])'
+      ng-click='userClicked($index)') {{user}}
+
+// Main body of the application
 block body
   br
   br
   div
+    block sendChatInput
     div.row
-      div.form-group
-        div.input-group
-          // call onSend when enter is pressed while in text input
-          input#chatField.form-control(type='text'
-            style='display: inline-block;'
-            placeholder='type here to chat'
-            ng-model='chatInput'
-            ng-enter='onSend(chatInput)')
-          span.input-group-btn
-            // call onSend when clicked
-            button#sendButton.btn.btn-primary(type='button', ng-click='onSend(chatInput)') Send
-    div.row
-      div#chatbox.span4
-        // use function messageColorSelect to determine the color of the messages
-        // filter messages with the matchMessage function with search being the ng-model of the input text
-        div.alert.alert-dismissable.fade.in(ng-repeat='message in messageList | filter:matchMessage(search)'
-          ng-class='messageColorSelect(message)')
-
-          button.close(type='button', data-dismiss='alert', ng-click='removeMessage($index)') x
-          // use function labelColorSelect to determine color of label
-          // and function labelNameSelect to determine name of label 
-          span.label(ng-class='labelColorSelect(message.username)') {{ labelNameSelect(message.username) }}
-          span.label(ng-class='labelColorSelect(message.receiver)' ng-if='message.receiver') {{ labelNameSelect(message.receiver) }}
-
-          span(ng-if='message.message') 
-            | {{message.message}}
-          span(ng-if='message.error') 
-            | {{message.error}}
-      div#userList.list-group
-        // highlight selected user based on selectedIndex and hide hidden users based on isUserHidden function
-        // call userClicked when list item clicked
-        a.list-group-item.user_list(href='#'
-          ng-repeat='user in userList'
-          ng-class='{active: $index === selectedIndex }'
-          ng-if='!isUserHidden(userList[$index])'
-          ng-click='userClicked($index)') {{user}}
-
-block footer
-  script(src='js/bootstrap.min.js')
-
-block modalLogin
-  div#modalLogin.modal.fade(tabindex='-1', aria-labelledby='basicModal', aria-hidden='true')
-    div.modal-dialog
-      div.modal-content
-        div.modal-header
-          button.close(type='button', data-dismiss='modal', aria-hidden='true') x
-          h4.modal-title Please enter username and password:
-        div.modal-body
-          div.form-group
-            input#loginUsername.form-control(type='text', placeholder='username', ng-model='loginUsername')
-            input#loginPassword.form-control(type='password', placeholder='password', ng-model='loginPassword')
-        div.modal-footer
-          span.warningMessage {{loginWarning}} &nbsp;
-          // call onLogin when button clicked
-          button#loginButton.btn.btn-primary(type='button'
-            aria-hidden='true'
-            ng-click='onLogin(loginUsername, loginPassword)') Login
-
-block modalSignup
-  div#modalSignup.modal.fade(tabindex='-1', aria-labelledby='basicModal', aria-hidden='true')
-    div.modal-dialog
-      div.modal-content
-        div.modal-header
-          button.close(type='button', data-dismiss='modal', aria-hidden='true') x
-          h4.modal-title Please enter username and password:
-        div.modal-body
-          div.form-group
-            input#signupUsername.form-control(type='text', placeholder='username', ng-model='signupUsername')
-            input#signupPassword.form-control(type='password', placeholder='password', ng-model='signupPassword')
-            input#signupPasswordReenter.form-control(type='password', placeholder='reenter password', ng-model='signupPasswordReenter')
-        div.modal-footer
-          span.warningMessage {{signupWarning}} &nbsp;
-          // call onSignup when button clicked
-          button#signupButton.btn.btn-primary(type='button'
-            aria-hidden='true'
-            ng-click='onSignup(signupUsername, signupPassword, signupPasswordReenter)') Signup
+      block errorMessageBox
+      block chatbox
+      block userList
