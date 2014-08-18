@@ -3,7 +3,7 @@
 var chatApp = angular.module('chatApp');
 
 chatApp.controller('messageBoxControl', function($scope, $rootScope, socket, messageListFactory) {
-  $scope.messageList = messageListFactory;
+  $scope.messageList = messageListFactory.list;
   $scope.removeMessage = function($index) {
     $scope.messageList.splice($index, 1);
   };

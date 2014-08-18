@@ -1,8 +1,17 @@
 var chatApp = angular.module('chatApp');
 
-chatApp.factory('messageListFactory', function($rootScope) {
+chatApp.factory('messageListFactory', function($rootScope, $timeout) {
   var messageList = [];
-  return messageList;
+  return {
+    'list': messageList,
+    'addAndFade': function(message) {
+      messageList.push(message);
+      // remove message after two seconds
+      $timeout(function() {
+        messageList.pop();
+      }, 2000);
+    }
+  };
 });
 
 chatApp.factory('chatListFactory', function($rootScope) {

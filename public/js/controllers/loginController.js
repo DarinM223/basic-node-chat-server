@@ -3,7 +3,7 @@ var chatApp = angular.module('chatApp');
 chatApp.controller('loginControl', function($scope, $rootScope, socket, userListFactory, messageListFactory) {
   $scope.loginWarning = '';
   $scope.signupWarning = '';
-  $scope.messageList = messageListFactory;
+  $scope.messageList = messageListFactory.list;
   /**
    * @param {string} username
    * @param {string} password

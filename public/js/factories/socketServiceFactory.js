@@ -3,7 +3,7 @@ var chatApp = angular.module('chatApp');
 chatApp.factory('socketService', function($rootScope, socket, 
     chatListFactory, messageListFactory, userListFactory) {
   var chatList = chatListFactory;
-  var messageList = messageListFactory;
+  var messageList = messageListFactory.list;
   var userList = userListFactory.list;
   var hiddenUsers = userListFactory.hiddenUsers;
 
@@ -11,7 +11,7 @@ chatApp.factory('socketService', function($rootScope, socket,
     if (!data.error) {
       chatList.unshift(data);
     } else {
-      messageList.push(data);
+      messageListFactory.addAndFade(data);
     }
   });
 
