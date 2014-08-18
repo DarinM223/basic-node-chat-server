@@ -5,7 +5,7 @@ var chatApp = angular.module('chatApp');
 // main controller for the application, controls the
 // message and user lists and the current logged in user
 chatApp.controller('chatBoxControl', function($scope, $rootScope, socket, 
-    messageListFactory, chatListFactory, userListFactory) {
+    chatListFactory, userListFactory) {
   $scope.chatList = chatListFactory;
 
   // grab current list of users at the start

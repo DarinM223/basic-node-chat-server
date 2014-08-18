@@ -15,10 +15,15 @@ block sendChatInput
           button#sendButton.btn.btn-primary(type='button', ng-click='onSend(chatInput)') Send
 
 block messageBox
-  div.row
-    div.alert.alert-dismissable.alert-danger.fade.in(ng-repeat='message in messageList')
-      button.close(type='button', data-dismiss='alert') x
-      {{ message }}
+  div.row(ng-controller='messageBoxControl')
+    div.alert.alert-dismissable.fade.in(ng-repeat='message in messageList',
+      ng-class='messageColorSelect(message)')
+
+      button.close(type='button', data-dismiss='alert', ng-click='removeMessage($index)') x
+      span(ng-if='message.error')
+        | {{ message.error }}
+      span(ng-if='message.message')
+        | {{ message.message }}
 
 block chatbox
   div#chatbox.span4(ng-controller='chatBoxControl')
@@ -53,8 +58,8 @@ block body
   br
   br
   div
+    block messageBox
     block sendChatInput
     div.row
-      block errorMessageBox
       block chatbox
       block userList

@@ -1,8 +1,9 @@
 var chatApp = angular.module('chatApp');
 
-chatApp.controller('loginControl', function($scope, $rootScope, socket, userListFactory) {
+chatApp.controller('loginControl', function($scope, $rootScope, socket, userListFactory, messageListFactory) {
   $scope.loginWarning = '';
   $scope.signupWarning = '';
+  $scope.messageList = messageListFactory;
   /**
    * @param {string} username
    * @param {string} password
@@ -35,6 +36,7 @@ chatApp.controller('loginControl', function($scope, $rootScope, socket, userList
   socket.on('signup-response', function(data) {
     if (!data.error) {
       $('#modalSignup').modal('hide');
+      $scope.messageList.push({ message: 'You have successfully signed up as ' + data.username + '!' });
     } else {
       $scope.signupWarning = data.error;
     }

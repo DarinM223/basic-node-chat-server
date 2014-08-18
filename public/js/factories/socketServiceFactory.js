@@ -1,14 +1,18 @@
 var chatApp = angular.module('chatApp');
 
 chatApp.factory('socketService', function($rootScope, socket, 
-    chatListFactory, userListFactory) {
+    chatListFactory, messageListFactory, userListFactory) {
   var chatList = chatListFactory;
+  var messageList = messageListFactory;
   var userList = userListFactory.list;
   var hiddenUsers = userListFactory.hiddenUsers;
 
   socket.on('message', function(data) {
-    console.log(data);
-    chatList.unshift(data);
+    if (!data.error) {
+      chatList.unshift(data);
+    } else {
+      messageList.push(data);
+    }
   });
 
   socket.on('userlogin', function(data) {
