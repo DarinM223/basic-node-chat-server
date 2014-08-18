@@ -10,12 +10,22 @@ html(ng-app='chatApp')
     script(src='http://ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular-route.min.js')
     script(src='/socket.io/socket.io.js', type='text/javascript')
     script(src='js/app.js', type='text/javascript')
+
+    // Factories
     script(src='js/factories/miscFactory.js', type='text/javascript')
     script(src='js/factories/socketFactory.js', type='text/javascript')
+    script(src='js/factories/socketServiceFactory.js', type='text/javascript')
+
+    // Controllers
+    script(src='js/controllers/mainController.js', type='text/javascript')
     script(src='js/controllers/loginController.js', type='text/javascript')
-    script(src='js/controllers/controller.js', type='text/javascript')
+    script(src='js/controllers/chatBoxController.js', type='text/javascript')
+    script(src='js/controllers/navbarController.js', type='text/javascript')
+    script(src='js/controllers/sendChatController.js', type='text/javascript')
+    script(src='js/controllers/mainController.js', type='text/javascript')
+    script(src='js/controllers/userListController.js', type='text/javascript')
   body
-    div.container
+    div.container(ng-controller='mainControl')
       block header
       block body
       block footer
