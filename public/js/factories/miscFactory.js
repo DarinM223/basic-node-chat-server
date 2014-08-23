@@ -1,5 +1,8 @@
 var chatApp = angular.module('chatApp');
 
+/**
+ * @return {Object<Array<string>, function(string)}
+ */
 chatApp.factory('messageListFactory', function($rootScope, $timeout) {
   var messageList = [];
   return {
@@ -14,11 +17,17 @@ chatApp.factory('messageListFactory', function($rootScope, $timeout) {
   };
 });
 
+/**
+ * @return {Array<string>}
+ */
 chatApp.factory('chatListFactory', function($rootScope) {
   var chatList = [];
   return chatList;
 });
 
+/**
+ * @return {Object<Array<string>, Array<string>>}
+ */
 chatApp.factory('userListFactory', function($rootScope) {
   var list = [];
   var hiddenUsers = {};
