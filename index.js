@@ -78,7 +78,7 @@ io.sockets.on('connection', function (socket) {
     socket.emit('message', messages.pastMessages[i]);
   }
   // if it receives a login request, check database for existing users
-  socket.on('login', function (data) {
+  socket.on('user:login', function (data) {
     var already_registered = false;
     for (var key in sockid_to_username) {
       // if the username that you want is already in a socket
@@ -87,7 +87,7 @@ io.sockets.on('connection', function (socket) {
       }
     }
     if (already_registered) {
-      socket.emit('login-response', { error: 'You have already logged in' });
+      socket.emit('login:message', { error: 'You have already logged in' });
     } else {
       // verify user from username and password
       database.verifyUser(data.username, data.password, function(err, isMatch) {
@@ -96,23 +96,23 @@ io.sockets.on('connection', function (socket) {
         } else if (isMatch) {
           socket.join('registered');
           sockid_to_username[socket.id] = data.username;
-          socket.emit('login-response', { username: data.username });
-          io.sockets.emit('userlogin', { username: data.username });
+          socket.emit('login:message', { username: data.username });
+          io.sockets.emit('user:login', { username: data.username });
         } else {
-          socket.emit('login-response', { error: 'Your username or password was incorrect' });
+          socket.emit('login:message', { error: 'Your username or password was incorrect' });
         }
       });
     }
   });
 
-  socket.on('signup', function (data) {
+  socket.on('user:signup', function (data) {
     var userName = data.username;
     var userPwd = data.password;
 
     if (!userName || !userPwd) {
-      socket.emit('signup-response', { error: "Username or password is empty" });
+      socket.emit('signup:message', { error: "Username or password is empty" });
     } else if (userName.trim() === "" || userPwd.trim() === "") {
-      socket.emit('signup-response', { error: "Username or password is empty" });
+      socket.emit('signup:message', { error: "Username or password is empty" });
     } else {
       // insert new user
       database.insertUser(userName, userPwd, function(err, result) {
@@ -120,27 +120,27 @@ io.sockets.on('connection', function (socket) {
           console.log(err);
           console.log('There was an error accessing the database!');
         } else if (result === true) {
-          socket.emit('signup-response', { username: userName });
+          socket.emit('signup:message', { username: userName });
         } else {
-          socket.emit('signup-response', { error: 'There is already an account with this username' });
+          socket.emit('signup:message', { error: 'There is already an account with this username' });
         }
       });
     }
   });
 
   // send list of users when requested
-  socket.on('list', function (data) {
+  socket.on('users:list', function () {
     var username_list = [];
     for (var key in sockid_to_username) {
       if (sockid_to_username[key]) {
         username_list.push(sockid_to_username[key]);
       }
     }
-    socket.emit('list', { list: username_list });
+    socket.emit('user:list', { list: username_list });
   });
   
   // when client sends data, emit data to other clients
-  socket.on('send', function (data) {
+  socket.on('message', function (data) {
     //if the socket is registered, send the message
     if (sockid_to_username[socket.id]) {
       if (!data.receiver) {
@@ -173,7 +173,7 @@ io.sockets.on('connection', function (socket) {
     if (sockid_to_username[socket.id]) {
       var disconnected_uname = sockid_to_username[socket.id];
       sockid_to_username[socket.id] = null;
-      io.sockets.emit('userlogout', { username: disconnected_uname });
+      io.sockets.emit('user:logout', { username: disconnected_uname });
     }
   });
 }); // io.sockets.on('connection', function (socket) {

@@ -18,7 +18,7 @@ chatApp.controller('sendChatControl', function($scope, $rootScope, socket, userL
     if (receiver) {
       newMessage.receiver = receiver;
     }
-    socket.emit('send', newMessage, callback);
+    socket.emit('message', newMessage, callback);
   }
 
   /**

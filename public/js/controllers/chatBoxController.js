@@ -9,7 +9,7 @@ chatApp.controller('chatBoxControl', function($scope, $rootScope, socket,
   $scope.chatList = chatListFactory;
 
   // grab current list of users at the start
-  socket.emit('list');
+  socket.emit('user:list');
 
   $scope.matchChatMessage = function(query) {
     return function(message) {

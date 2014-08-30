@@ -10,7 +10,7 @@ chatApp.controller('loginControl', function($scope, $rootScope, socket, userList
    * @param {function} callback
    */
   function loginUser(username, password, callback) {
-    socket.emit('login', {'username': username, 'password': password}, callback);
+    socket.emit('user:login', {'username': username, 'password': password}, callback);
   }
 
   /**
@@ -19,10 +19,10 @@ chatApp.controller('loginControl', function($scope, $rootScope, socket, userList
    * @param {function} callback
    */
   function signupUser(username, password, callback) {
-    socket.emit('signup', { 'username': username, 'password': password }, callback);
+    socket.emit('user:signup', { 'username': username, 'password': password }, callback);
   }
 
-  socket.on('login-response', function(data) {
+  socket.on('login:message', function(data) {
     // if login successful, change current username, otherwise push error message
     if (data.username) {
       $rootScope.my_username = data.username;
@@ -33,7 +33,7 @@ chatApp.controller('loginControl', function($scope, $rootScope, socket, userList
     }
   });
 
-  socket.on('signup-response', function(data) {
+  socket.on('signup:message', function(data) {
     if (!data.error) {
       $('#modalSignup').modal('hide');
       $scope.messageList.push({ message: 'You have successfully signed up as ' + data.username + '!' });

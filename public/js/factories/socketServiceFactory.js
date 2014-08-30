@@ -15,7 +15,7 @@ chatApp.factory('socketService', function($rootScope, socket,
     }
   });
 
-  socket.on('userlogin', function(data) {
+  socket.on('user:login', function(data) {
     var message = {
       message: data.username + ' has connected to the server'
     };
@@ -33,7 +33,7 @@ chatApp.factory('socketService', function($rootScope, socket,
     }
   });
 
-  socket.on('userlogout', function(data) {
+  socket.on('user:logout', function(data) {
     var message = {
       message: data.username + ' has disconnected to the server'
     };
@@ -48,7 +48,7 @@ chatApp.factory('socketService', function($rootScope, socket,
     hiddenUsers[data.username] = null;
   });
 
-  socket.on('list', function(data) {
+  socket.on('user:list', function(data) {
     // clear user list
     while (userList.length > 0) {
       userList.pop();
