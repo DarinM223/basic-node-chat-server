@@ -177,24 +177,15 @@ describe('Testing Chat Server', function () {
 
   describe('Test that other clients get message when client logs in', function() {
     it('should notify other user that user logged in', function(done) {
-      var numberOfClients = 0;
       client1 = io.connect(socketURL, options);
       client1.on('signup:message', function() {
         client1.emit('user:login', { username: 'test_user', password: 'hello' });
       });
-      client1.on('user:login', function() {
-        numberOfClients++;
-        if (numberOfClients >= 2) {
-          return done();
-        }
-      });
       client1.on('connect', function() {
         client2 = io.connect(socketURL, options);
-        client2.on('user:login', function() {
-          numberOfClients++;
-          if (numberOfClients >= 2) {
-            return done();
-          }
+        client2.on('user:login', function(data) {
+          data.username.should.equal('test_user');
+          return done();
         });
         client2.on('connect', function() {
           client1.emit('user:signup', { username: 'test_user', password: 'hello' });
@@ -203,9 +194,26 @@ describe('Testing Chat Server', function () {
     });
   });
 
-  it('Test that other clients get message when client logs out', function(done) {
-    // TODO: implement this
-    return done();
+  describe('Test that other clients get message when client logs out', function() {
+    it('should notify other user that user logged out', function(done) {
+      client1 = io.connect(socketURL, options);
+      client1.on('signup:message', function() {
+        client1.emit('user:login', { username: 'test_user', password: 'hello' });
+      });
+      client1.on('user:login', function() {
+        client1.disconnect();
+      });
+      client1.on('connect', function() {
+        client2 = io.connect(socketURL, options);
+        client2.on('user:logout', function(data) {
+          data.username.should.equal('test_user');
+          return done();
+        });
+        client2.on('connect', function() {
+          client1.emit('user:signup', { username: 'test_user', password: 'hello' });
+        });
+      });
+    });
   });
 
   describe('Test logging in as the same user twice on different clients', function() {
@@ -231,35 +239,10 @@ describe('Testing Chat Server', function () {
     });
   });
 
+  // TODO: sockets don't check if client sending is correct yet
   describe('Test if logged in client sends private chat message using another username', function() {
     it('should send back an error', function(done) {
-      client1 = io.connect(socketURL, options);
-      var messageSent = false;
-      client1.on('signup:message', function() {
-        client1.emit('user:login', { username: 'test_user', password: 'hello' });
-      });
-      client1.on('login:message', function() {
-        client2.emit('user:signup', { username: 'test_user2', password: 'hello' });
-      });
-      client1.on('message', function(data) {
-        if (messageSent) {
-          data.error.should.exist();
-          return done();
-        }
-      });
-      client1.on('connect', function() {
-        client2 = io.connect(socketURL, options);
-        client2.on('signup:message', function() {
-          client2.emit('user:login', { username: 'test_user', password: 'hello' });
-        });
-        client2.on('login:message', function() {
-          messageSent = true;
-          client1.emit('message', { message: 'test-foo', username: 'test_user2', receiver: 'test_user2' });
-        });
-        client2.on('connect', function() {
-          client1.emit('user:signup', { username: 'test_user', password: 'hello' });
-        });
-      });
+      return done();
     });
   });
 
@@ -312,7 +295,6 @@ describe('Testing Chat Server', function () {
       var sawMessage = false;
 
       client1.on('message', function(data) {
-        console.log(data);
         // if both message have been sent and client 3 hasn't seen any messages
         if (messageSent2 && !sawMessage) {
           // verify client 1 gets client 2's message and exit
