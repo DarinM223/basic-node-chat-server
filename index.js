@@ -142,7 +142,7 @@ io.sockets.on('connection', function (socket) {
   // when client sends data, emit data to other clients
   socket.on('message', function (data) {
     //if the socket is registered, send the message
-    if (sockid_to_username[socket.id]) {
+    if (sockid_to_username[socket.id] && sockid_to_username[socket.id] === data.username) {
       if (!data.receiver) {
         // public message
         io.sockets.emit('message', data);

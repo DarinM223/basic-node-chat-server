@@ -242,7 +242,33 @@ describe('Testing Chat Server', function () {
   // TODO: sockets don't check if client sending is correct yet
   describe('Test if logged in client sends private chat message using another username', function() {
     it('should send back an error', function(done) {
-      return done();
+      var messageSent = false;
+      client1 = io.connect(socketURL, options);
+      client1.on('signup:message', function () {
+        client1.emit('user:login', { username: 'test_user', password: 'hello' });
+      });
+      client1.on('login:message', function() {
+        client2.emit('user:signup', { username: 'test_user2', password: 'hello' });
+      });
+      client1.on('connect', function() {
+        client2 = io.connect(socketURL, options);
+        client2.on('signup:message', function() {
+          client2.emit('user:login', { username: 'test_user2', password: 'hello' });
+        });
+        client2.on('login:message', function() {
+          messageSent = true;
+          client2.emit('message', { message: 'test', username: 'test_user', receiver: 'test_user' });
+        });
+        client2.on('message', function(data) {
+          if (messageSent) {
+            data.error.should.equal('You have to login before chatting');
+            return done();
+          }
+        });
+        client2.on('connect', function() {
+          client1.emit('user:login', { username: 'test_user', password: 'hello' });
+        });
+      });
     });
   });
 
