@@ -129,7 +129,6 @@ database.prototype.listUsers = function(callback) {
  * @private
  */
 database.prototype.clearUsers = function() {
-  console.log(this.debugging);
   if (this.debugging === true) {
     this.User.collection.remove({}, function(err, result) {
     });
