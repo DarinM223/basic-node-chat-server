@@ -1,15 +1,14 @@
 'use strict';
 var should = require('should');
 var io = require('socket.io-client');
+var express = require('express');
 var async = require('async');
 
 var socketURL = 'http://localhost:3700';
-var _database = require('../database.js');
 
-var database = new _database('mongodb://localhost:27017/test', true);
+var app = express();
 
-var server = require('../index.js');
-server.setDebugging();
+var sockets = require('../sockets.js')(app, 3700, true);
 
 var options = {
     transports: ['websocket'],
@@ -19,14 +18,14 @@ var options = {
 describe('Testing Chat Server', function () {
   var client1, client2, client3;
   beforeEach(function(done) {
-    database.clearUsers();
+    sockets.resetEverything();
     client1 = null;
     client2 = null; 
     client3 = null;
     return done();
   });
   afterEach(function(done) {
-    database.clearUsers();
+    sockets.resetEverything();
     if (client1) {
       client1.disconnect();
     }
@@ -99,7 +98,7 @@ describe('Testing Chat Server', function () {
   });
 
   describe('Test valid signup to see if it works', function() {
-    it('should send back \'OK\'', function(done) {
+    it('should send back username', function(done) {
       client1 = io.connect(socketURL, options);
       client1.on('signup:message', function(data) {
         data.username.should.equal('test_user');
