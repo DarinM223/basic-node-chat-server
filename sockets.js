@@ -2,6 +2,7 @@ var database = null;
 
 // so you can find current username using the socket
 var sockid_to_username = {};
+var username_to_sockid = {};
 
 function socketInit(socket) {
   socket.emit('message', { message: 'Hello, please login to chat' });
@@ -27,6 +28,7 @@ function onUserLogin(data) {
       } else if (isMatch) {
         clientSocket.join('registered');
         sockid_to_username[clientSocket.id] = data.username;
+        username_to_sockid[data.username] = clientSocket.id;
         clientSocket.emit('login:message', { username: data.username });
         io.sockets.emit('user:login', { username: data.username });
       } else {
@@ -83,17 +85,11 @@ function onMessage(data) {
       io.sockets.emit('message', data);
     } else {
       // private message
-      var sent_message = false;
-      for (var key in sockid_to_username) {
-        // if socket id's mapped username matches the client to receive the message
-        if (sockid_to_username[key] === data.receiver) {
-          // send to that socket and your socket
-          clientSocket.to(key).emit('message', data);
-          clientSocket.emit('message', data);
-          sent_message = true;
-        }
-      }
-      if (!sent_message) {
+      if (username_to_sockid[data.receiver]) {
+        receiverid = username_to_sockid[data.receiver];
+        clientSocket.to(receiverid).emit('message', data);
+        clientSocket.emit('message', data);
+      } else {
         clientSocket.emit('message', { error: 'User is either not online or does not exist' });
       }
     }
@@ -108,8 +104,9 @@ function onDisconnect() {
   // emit disconnected message
   if (sockid_to_username[clientSocket.id]) {
     var disconnected_uname = sockid_to_username[clientSocket.id];
-    sockid_to_username[clientSocket.id] = null;
-    delete sockid_to_username[clientSocket.id]
+    var username = sockid_to_username[clientSocket.id];
+    delete sockid_to_username[clientSocket.id];
+    delete username_to_sockid[username];
 
     io.sockets.emit('user:logout', { username: disconnected_uname });
   }
