@@ -1,38 +1,10 @@
-// include database functions
-var _database = require('./database.js');
-var database, io;
+var database = null;
 
 // so you can find current username using the socket
 var sockid_to_username = {};
 
-/**
- * Saves the last 20 public messages for a newly connected user
- * @constructor
- */
-function messageStore() {
-  this.pastMessages = [];
-}
-
-/**
- * Adds a new message to the message store
- * @param {string} message 
- */
-messageStore.prototype.add_message = function (message) {
-  // remove oldest messages first
-  while (this.pastMessages.length + 1 > 20) {
-    this.pastMessages.shift();
-  }
-  this.pastMessages.push(message);
-};
-
-var messages = new messageStore();
-
 function socketInit(socket) {
   socket.emit('message', { message: 'Hello, please login to chat' });
-
-  for (var i = 0; i < messages.pastMessages.length; i++) {
-    socket.emit('message', messages.pastMessages[i]);
-  }
 }
 
 function onUserLogin(data) {
@@ -49,7 +21,7 @@ function onUserLogin(data) {
     clientSocket.emit('login:message', { error: 'You have already logged in' });
   } else {
     // verify user from username and password
-    database.verifyUser(data.username, data.password, function(err, isMatch) {
+    database.User.verify(data.username, data.password, function(err, isMatch) {
       if (err) {
         console.log('There was an error with the database!');
       } else if (isMatch) {
@@ -76,7 +48,7 @@ function onUserSignup(data) {
     clientSocket.emit('signup:message', { error: "Username or password is empty" });
   } else {
     // insert new user
-    database.insertUser(userName, userPwd, function(err, result) {
+    database.User.insert(userName, userPwd, function(err, result) {
       if (err) {
         console.log(err);
         console.log('There was an error accessing the database!');
@@ -147,9 +119,9 @@ module.exports = function(app, port, debugging) {
   var server = app.listen(port);
   io = require('socket.io').listen(server);
   if (debugging) {
-    database = new _database('mongodb://localhost:27017/test', true);
+    database = require('./database.js')('mongodb://localhost:27017/test', true);
   } else {
-    database = new _database('mongodb://localhost:27017/mydb', false);
+    database = require('./database.js')('mongodb://localhost:27017/mydb', false);
   }
 
   io.sockets.on('connection', function(client) {
@@ -163,7 +135,7 @@ module.exports = function(app, port, debugging) {
   });
   return {
     'resetEverything': function() {
-      database.clearUsers();
+      database.User.clear();
       sockid_to_username = {};
     }
   };
