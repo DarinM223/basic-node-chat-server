@@ -19,8 +19,8 @@ app.set('view engine', "jade");
 app.engine('jade', require('jade').__express);
 
 // set up server that renders the page when a request is made
-app.get("/", function (req, res) {
-  res.render("index");
+app.get('/', function (req, res) {
+  res.render('index');
 });
 
 // tell express to find where the public files needed for the html pages are

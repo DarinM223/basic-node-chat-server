@@ -77,7 +77,7 @@ User.prototype.verify = function(username, password, callback) {
 
 User.prototype.list = function(callback) {
   this.User.find({}, function(err, docs) {
-    callback(err, docs);
+    return callback(err, docs);
   });
 };
 
