@@ -15,8 +15,7 @@ function Database(connectionURL, testing) {
   var connection = mongoose.connect(connectionURL);
 
   // initialize models
-  var UserFactory = require('./models/users.js');
-  this.User = new UserFactory(connection, testing);
+  this.User = require('./models/users.js')(connection, testing);
 };
 
 var database = null;

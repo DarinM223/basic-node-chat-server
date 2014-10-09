@@ -94,4 +94,6 @@ User.prototype.clear = function() {
   }
 };
 
-module.exports = User;
+module.exports = function(connection, debugging) {
+  return new User(connection, debugging);
+};
