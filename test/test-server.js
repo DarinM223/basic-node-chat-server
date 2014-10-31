@@ -1,4 +1,10 @@
 'use strict';
+
+var mongoose = require('mongoose');
+if (mongoose.connection.readyState === 0) {
+  mongoose.connect('mongodb://localhost:27017/test');
+}
+
 var should = require('should');
 var io = require('socket.io-client');
 var express = require('express');
@@ -8,7 +14,7 @@ var socketURL = 'http://localhost:3700';
 
 var app = express();
 
-var sockets = require('../sockets.js')(app, 3700, true);
+var sockets = require('../sockets.js')(app, 3700);
 
 var options = {
     transports: ['websocket'],

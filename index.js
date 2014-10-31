@@ -1,7 +1,9 @@
 'use strict';
+
 var express = require('express');
 var app = express();
 var async = require('async');
+var mongoose = require('mongoose');
 
 //you need this to parse requests!!!!!
 //app.use(express.json()); //this doesn't work!!!
@@ -29,5 +31,8 @@ app.use(express.static(__dirname + '/public'));
 // use socket integration
 var port = 3700;
 
+// connect to main database
+mongoose.connect('mongodb://localhost:27017/mydb');
+
 // start sockets server
-var sockets = require('./sockets.js')(app, port, false);
+var sockets = require('./sockets.js')(app, port);

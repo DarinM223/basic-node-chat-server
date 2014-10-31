@@ -1,4 +1,9 @@
-var database = null;
+'use strict';
+
+var User = require('./models/users.js');
+var database = require('./database.js');
+
+var io = null;
 
 // so you can find current username using the socket
 var sockid_to_username = {};
@@ -22,7 +27,7 @@ function onUserLogin(data) {
     clientSocket.emit('login:message', { error: 'You have already logged in' });
   } else {
     // verify user from username and password
-    database.User.verify(data.username, data.password, function(err, isMatch) {
+    database.verifyUser(data.username, data.password, function(err, isMatch) {
       if (err) {
         console.log('There was an error with the database!');
       } else if (isMatch) {
@@ -50,7 +55,7 @@ function onUserSignup(data) {
     clientSocket.emit('signup:message', { error: "Username or password is empty" });
   } else {
     // insert new user
-    database.User.insert(userName, userPwd, function(err, result) {
+    database.insertUser(userName, userPwd, function(err, result) {
       if (err) {
         console.log(err);
         console.log('There was an error accessing the database!');
@@ -86,7 +91,7 @@ function onMessage(data) {
     } else {
       // private message
       if (username_to_sockid[data.receiver]) {
-        receiverid = username_to_sockid[data.receiver];
+        var receiverid = username_to_sockid[data.receiver];
         clientSocket.to(receiverid).emit('message', data);
         clientSocket.emit('message', data);
       } else {
@@ -112,27 +117,22 @@ function onDisconnect() {
   }
 }
 
-module.exports = function(app, port, debugging) {
+module.exports = function(app, port) {
   var server = app.listen(port);
   io = require('socket.io').listen(server);
-  if (debugging) {
-    database = require('./database.js')('mongodb://localhost:27017/test', true);
-  } else {
-    database = require('./database.js')('mongodb://localhost:27017/mydb', false);
-  }
 
   io.sockets.on('connection', function(client) {
     socketInit(client);
 
-    client.on('user:login', onUserLogin);
-    client.on('user:signup', onUserSignup);
-    client.on('user:list', onUserList);
-    client.on('message', onMessage);
-    client.on('disconnect', onDisconnect);
+    client.on('user:login', onUserLogin.bind(client));
+    client.on('user:signup', onUserSignup.bind(client));
+    client.on('user:list', onUserList.bind(client));
+    client.on('message', onMessage.bind(client));
+    client.on('disconnect', onDisconnect.bind(client));
   });
   return {
     'resetEverything': function() {
-      database.User.clear();
+      User.collection.remove({}, function(err, result) {});
       sockid_to_username = {};
     }
   };
