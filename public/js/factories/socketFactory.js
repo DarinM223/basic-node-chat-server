@@ -1,3 +1,6 @@
+/* @flow */
+'use strict';
+
 var connectionURL = 'http://localhost:3700';
 /**
  * creates a socket that wraps the functions of socket.io

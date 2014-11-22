@@ -1,3 +1,6 @@
+/* @flow */
+'use strict'; 
+
 var chatApp = angular.module('chatApp');
 
 chatApp.factory('socketService', function($rootScope, socket, 

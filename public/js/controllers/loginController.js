@@ -1,17 +1,11 @@
+/* @flow */
+'use strict';
 var chatApp = angular.module('chatApp');
 
 chatApp.controller('loginControl', function($scope, $rootScope, socket, userListFactory, messageListFactory) {
   $scope.loginWarning = '';
   $scope.signupWarning = '';
   $scope.messageList = messageListFactory.list;
-  /**
-   * @param {string} username
-   * @param {string} password
-   * @param {function} callback
-   */
-  function loginUser(username, password, callback) {
-    socket.emit('user:login', {'username': username, 'password': password}, callback);
-  }
 
   /**
    * @param {string} username
@@ -19,28 +13,18 @@ chatApp.controller('loginControl', function($scope, $rootScope, socket, userList
    * @param {function} callback
    */
   function signupUser(username, password, callback) {
-    socket.emit('user:signup', { 'username': username, 'password': password }, callback);
+    $http.post('/users/new', { username: username, password: password })
+    .success(function(data, status, headers, config) {
+      if (data.success) {
+        $('#modalSignup').modal('hide');
+        $scope.messageList.push({ message: 'You have successfully signed up as ' + data.username + '!' });
+      } else {
+        $scope.signupWarning = data.error;
+      }
+    }).error(function(data, status, headers, config) {
+      $scope.signupWarning = "Error logging in!";
+    });
   }
-
-  socket.on('login:message', function(data) {
-    // if login successful, change current username, otherwise push error message
-    if (data.username) {
-      $rootScope.my_username = data.username;
-      $('#modalLogin').modal('hide');
-    } else {
-      //$scope.messageList.unshift(data);
-      $scope.loginWarning = data.error;
-    }
-  });
-
-  socket.on('signup:message', function(data) {
-    if (!data.error) {
-      $('#modalSignup').modal('hide');
-      $scope.messageList.push({ message: 'You have successfully signed up as ' + data.username + '!' });
-    } else {
-      $scope.signupWarning = data.error;
-    }
-  });
 
   $scope.clearFields = function() {
     $scope.loginUsername = '';
@@ -74,7 +58,7 @@ chatApp.controller('loginControl', function($scope, $rootScope, socket, userList
     if (!username || username === '') {
       $scope.signupWarning = 'Username is empty';
     } else if (password === passwordReenter) {
-      signupUser(username, password);
+      signupUser(username, password, null);
     } else {
       $scope.signupWarning = 'Passwords are not the same';
     }

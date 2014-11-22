@@ -5,7 +5,14 @@ html(ng-app='chatApp')
     title Real time web chat
     link(rel='stylesheet', href='bower_components/bootstrap/dist/css/bootstrap.min.css')
     link(rel='stylesheet', href='css/styles.css')
-
+  body
+    div.container(ng-controller='mainControl')
+      block header
+      block body
+      block footer
+    div(ng-controller='loginControl')
+      block modalLogin
+      block modalSignup
     script(src='bower_components/jquery/dist/jquery.min.js')
     script(src='bower_components/angular/angular.min.js', type='text/javascript')
     script(src='bower_components/angular-route/angular-route.min.js')
@@ -25,11 +32,3 @@ html(ng-app='chatApp')
     script(src='js/controllers/messageBoxController.js', type='text/javascript')
     script(src='js/controllers/sendChatController.js', type='text/javascript')
     script(src='js/controllers/userListController.js', type='text/javascript')
-  body
-    div.container(ng-controller='mainControl')
-      block header
-      block body
-      block footer
-    div(ng-controller='loginControl')
-      block modalLogin
-      block modalSignup

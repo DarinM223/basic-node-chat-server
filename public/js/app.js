@@ -1,3 +1,6 @@
+/* @flow */
+'use strict';
+
 var chatApp = angular.module('chatApp', [
   'ngRoute',
 ]);
@@ -18,4 +21,24 @@ chatApp.directive('ngEnter', function() {
       }
     });
   };
+});
+
+chatApp.config(function($routeProvider) {
+  $routeProvider
+  .when('/', {
+    templateUrl: '../views/main.html',
+    controller: 'MainCtrl'
+  })
+  .when('/home', {
+    templateUrl: '../views/main.html',
+    controller: 'MainCtrl'
+  })
+  .when('/login', {
+    templateUrl: '../views/login.html',
+    controller: 'LoginCtrl'
+  })
+  .when('/signup', {
+    templateUrl: '../views/signup.html',
+    controller: 'SignupCtrl'
+  });
 });

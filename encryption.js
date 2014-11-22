@@ -1,3 +1,4 @@
+/* @flow */
 'use strict';
 var bcrypt = require('bcrypt');
 var async = require('async');

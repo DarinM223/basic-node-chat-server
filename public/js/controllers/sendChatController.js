@@ -1,3 +1,4 @@
+/* @flow */
 'use strict';
 
 var chatApp = angular.module('chatApp');
@@ -26,9 +27,9 @@ chatApp.controller('sendChatControl', function($scope, $rootScope, socket, userL
    */
   $scope.onSend = function(chatMessage) {
     if ($rootScope.selectedIndex !== -1) {
-      sendMessage(chatMessage, $rootScope.my_username, $scope.userList[$rootScope.selectedIndex]);
+      sendMessage(chatMessage, $rootScope.my_username, $scope.userList[$rootScope.selectedIndex], null);
     } else {
-      sendMessage(chatMessage, $rootScope.my_username, null);
+      sendMessage(chatMessage, $rootScope.my_username, null, null);
     }
     $scope.chatInput = '';
   };

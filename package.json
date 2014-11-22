@@ -19,7 +19,9 @@
                 "socket.io-client": "*",
                 "mocha": "*",
                 "bcrypt": "*", 
-                "mongoose": "*"
+                "mongoose": "*",
+                "passport": "*",
+                "passport-http": "*"
         },
         "author": "developer"
 }
