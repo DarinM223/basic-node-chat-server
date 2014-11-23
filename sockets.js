@@ -1,7 +1,7 @@
 /* @flow */
 'use strict';
 
-var User = require('./models/users.js');
+var User = require('./models/User.js');
 var database = require('./database.js');
 
 var io = null;

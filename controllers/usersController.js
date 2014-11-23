@@ -1,12 +1,12 @@
 'use strict';
 
-var User = require('../models/users.js');
+var User = require('../models/User.js');
 var database = require('../database.js');
 
 /**
  * @method POST
- * @param {string} body.username
- * @param {string} body.password
+ * @param body.username
+ * @param body.password
  */
 exports.newUser = function(req, res) {
   if (req && req.body && req.body.username && req.body.password) {
@@ -21,7 +21,7 @@ exports.newUser = function(req, res) {
       } else {
         res.json({
           success: false,
-          error: 'There was an error creating new user '
+          error: 'There was an error creating a new user'
         });
       }
     });
@@ -34,19 +34,19 @@ exports.newUser = function(req, res) {
 
 /**
  * @method GET
- * @param {string} id 
+ * @param params.id
  */
 exports.getUser = function(req, res) {
   if (req.param('id')) {
     User.findOne({ '_id': req.param('id') }, function(err, user) {
-      if (!err) {
+      if (!err && user) {
         res.json({
-          'success': true,
-          'user': user
+          success: true,
+          user: user
         });
       } else {
         res.json({
-          'success': false
+          success: false
         });
       }
     });
@@ -64,11 +64,11 @@ exports.updateUser = function(req, res) {
   res.json({
     message: 'Not implemented yet'
   });
-}
+};
 
 /**
  * @method DELETE
- * @param {string} id
+ * @param params.id
  */
 exports.deleteUser = function(req, res) {
   if (req.param('id')) {

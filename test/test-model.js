@@ -6,7 +6,7 @@ if (mongoose.connection.readyState === 0) {
 }
 
 var should = require('should');
-var User = require('../models/users.js');
+var User = require('../models/User.js');
 var database = require('../database.js');
 
 describe('Testing User model', function() {

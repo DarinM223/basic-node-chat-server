@@ -1,7 +1,7 @@
 /* @flow */
 'use strict';
 
-var User = require('./models/users.js');
+var User = require('./models/User.js');
 
 module.exports = {
   insertUser: function(username, password, callback) {
