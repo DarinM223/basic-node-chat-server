@@ -12,8 +12,8 @@ chatApp.controller('loginControl', function($scope, $rootScope, socket, userList
    * @param {string} password
    * @param {function} callback
    */
-  function signupUser(username, password, callback) {
-    $http.post('/users/new', { username: username, password: password })
+  function signupUser(username, password) {
+    $http.post('/users', { username: username, password: password })
     .success(function(data, status, headers, config) {
       if (data.success) {
         $('#modalSignup').modal('hide');
@@ -25,6 +25,19 @@ chatApp.controller('loginControl', function($scope, $rootScope, socket, userList
       $scope.signupWarning = "Error logging in!";
     });
   }
+
+  function loginUser(username, password) {
+    socket.emit('user:login', {username: username, password: password});
+  }
+
+  socket.on('login:message', function(data) {
+    if (data.username) {
+      $rootScope.my_username = data.username;
+      $('#modalLogin').modal('hide');
+    } else {
+      $scope.loginWarning = data.error;
+    }
+  });
 
   $scope.clearFields = function() {
     $scope.loginUsername = '';
@@ -58,7 +71,7 @@ chatApp.controller('loginControl', function($scope, $rootScope, socket, userList
     if (!username || username === '') {
       $scope.signupWarning = 'Username is empty';
     } else if (password === passwordReenter) {
-      signupUser(username, password, null);
+      signupUser(username, password);
     } else {
       $scope.signupWarning = 'Passwords are not the same';
     }

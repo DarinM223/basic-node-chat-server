@@ -1,6 +1,7 @@
 #chatbox {
   width: 60%;
-  height: 600px;
+  /*height: 600px;*/
+  height: 60%;
   overflow: auto;
   display: inline-block;
   float: left;
@@ -8,7 +9,8 @@
 
 #userList {
   width: 40%;
-  height: 600px;
+  /*height: 600px;*/
+  height: 60%;
   overflow: auto;
   float: right;
 }

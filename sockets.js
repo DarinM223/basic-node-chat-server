@@ -17,20 +17,14 @@ function socketInit(socket) {
 function onUserLogin(data) {
   var clientSocket = this;
 
-  var already_registered = false;
-  for (var key in sockid_to_username) {
-    // if the username that you want is already in a socket
-    if (sockid_to_username[key] === data.username) {
-      already_registered = true;
-    }
-  }
-  if (already_registered) {
+  if (data.username in username_to_sockid) {
     clientSocket.emit('login:message', { error: 'You have already logged in' });
   } else {
     // verify user from username and password
     database.verifyUser(data.username, data.password, function(err, isMatch) {
       if (err) {
         console.log('There was an error with the database!');
+        clientSocket.disconnect();
       } else if (isMatch) {
         clientSocket.join('registered');
         sockid_to_username[clientSocket.id] = data.username;
@@ -39,31 +33,7 @@ function onUserLogin(data) {
         io.sockets.emit('user:login', { username: data.username });
       } else {
         clientSocket.emit('login:message', { error: 'Your username or password was incorrect' });
-      }
-    });
-  }
-}
-
-function onUserSignup(data) {
-  var clientSocket = this;
-
-  var userName = data.username;
-  var userPwd = data.password;
-
-  if (!userName || !userPwd) {
-    clientSocket.emit('signup:message', { error: "Username or password is empty" });
-  } else if (userName.trim() === "" || userPwd.trim() === "") {
-    clientSocket.emit('signup:message', { error: "Username or password is empty" });
-  } else {
-    // insert new user
-    database.insertUser(userName, userPwd, function(err, result) {
-      if (err) {
-        console.log(err);
-        console.log('There was an error accessing the database!');
-      } else if (result === true) {
-        clientSocket.emit('signup:message', { username: userName });
-      } else {
-        clientSocket.emit('signup:message', { error: 'There is already an account with this username' });
+        clientSocket.disconnect();
       }
     });
   }
@@ -81,26 +51,38 @@ function onUserList() {
   clientSocket.emit('user:list', { list: username_list });
 }
 
+function onJoinGroup(data) {
+  var clientSocket = this;
+
+  // if socket is logged in
+  if (sockid_to_username[clientSocket.id] && sockid_to_username[clientSocket.id] === data.username) {
+    clientSocket.join(data.groupId);
+  } else {
+    clientSocket.emit('message', { error: 'You are not logged in' });
+  }
+}
+
 function onMessage(data) {
   var clientSocket = this;
 
   //if the socket is registered, send the message
   if (sockid_to_username[clientSocket.id] && sockid_to_username[clientSocket.id] === data.username) {
     if (!data.receiver) {
-      // public message
-      io.sockets.emit('message', data);
+      // send a message to the specific group
+      clientSocket.broadcast.to(data.groupId).emit('message', data);
     } else {
       // private message
       if (username_to_sockid[data.receiver]) {
         var receiverid = username_to_sockid[data.receiver];
-        clientSocket.to(receiverid).emit('message', data);
+        io.sockets.connected[receiverid].emit('message', data);
         clientSocket.emit('message', data);
       } else {
         clientSocket.emit('message', { error: 'User is either not online or does not exist' });
       }
     }
   } else {
-    clientSocket.emit('message', { error: 'You have to login before chatting' });
+    clientSocket.emit('message', { error: 'You are not logged in' });
+    clientSocket.disconnect();
   }
 }
 
@@ -114,7 +96,10 @@ function onDisconnect() {
     delete sockid_to_username[clientSocket.id];
     delete username_to_sockid[username];
 
-    io.sockets.emit('user:logout', { username: disconnected_uname });
+    // send disconnect to every room the socket was in
+    for (var i = 0; i < clientSocket.rooms.length; i++) {
+      clientSocket.broadcast.to(clientSocket.rooms[i]).emit('user:logout', { username: disconnected_uname });
+    }
   }
 }
 
@@ -126,8 +111,8 @@ module.exports = function(app, port) {
     socketInit(client);
 
     client.on('user:login', onUserLogin.bind(client));
-    client.on('user:signup', onUserSignup.bind(client));
     client.on('user:list', onUserList.bind(client));
+    client.on('user:joingroup', onJoinGroup.bind(client));
     client.on('message', onMessage.bind(client));
     client.on('disconnect', onDisconnect.bind(client));
   });
@@ -135,6 +120,7 @@ module.exports = function(app, port) {
     'resetEverything': function() {
       User.collection.remove({}, function(err, result) {});
       sockid_to_username = {};
+      username_to_sockid = {};
     }
   };
 };

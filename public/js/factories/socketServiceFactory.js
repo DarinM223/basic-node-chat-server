@@ -10,9 +10,11 @@ chatApp.factory('socketService', function($rootScope, socket,
   var userList = userListFactory.list;
   var hiddenUsers = userListFactory.hiddenUsers;
 
+  // edit for groups: from the message tell which group it is, then add it to the specific group and send a notification
   socket.on('message', function(data) {
     if (!data.error) {
-      chatList.unshift(data);
+      // chatList.unshift(data);
+      chatList.push(data);
     } else {
       messageListFactory.addAndFade(data);
     }
