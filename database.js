@@ -2,6 +2,7 @@
 'use strict';
 
 var User = require('./models/User.js');
+var redisSubClient = require('./redis/redis-subscription.js');
 
 module.exports = {
   insertUser: function(username, password, callback) {
@@ -26,11 +27,33 @@ module.exports = {
     User.findOne({ 'username': username }, function(err, user) {
       // if the username does not exist, return false
       if (err || !user) {
-        return callback(null, false);
+        return callback(null, null);
       }
       user.comparePassword(password, function(err, isPasswordMatch) {
-        return callback(err, isPasswordMatch);
+        return callback(err, user);
       });
     });
   },
+
+  // quickly checks if the group already exists
+  hasGroup: function(groupid) {
+    redisSubClient.exists('group:' + groupid, function(err, result) {
+      if (err) {
+        console.log(err);
+      } else if (result) { // group already in cache
+        return true;
+      } else { // group not in cache, check database
+        Group.find({ _id: groupid }, function(err, result) {
+          if (err) {
+            console.log(err);
+            return false;
+          } else if (result) {
+            return true;
+          } else {
+            return false;
+          }
+        });
+      }
+    });
+  }
 };

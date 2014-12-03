@@ -24,7 +24,8 @@ chatApp.factory('socketService', function($rootScope, socket,
     var message = {
       message: data.username + ' has connected to the server'
     };
-    chatList.unshift(message);
+    // chatList.unshift(message);
+    chatList.push(message);
     var notInUserList = true;
 
     for (var i = 0; i < userList.length; i++) {
@@ -42,7 +43,8 @@ chatApp.factory('socketService', function($rootScope, socket,
     var message = {
       message: data.username + ' has disconnected to the server'
     };
-    chatList.unshift(message);
+    // chatList.unshift(message);
+    chatList.push(message);
 
     // remove user from list
     for (var i = 0; i < userList.length; i++) {

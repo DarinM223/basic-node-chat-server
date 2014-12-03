@@ -15,7 +15,7 @@ block sendChatInput
           button#sendButton.btn.btn-primary(type='button', ng-click='onSend(chatInput)') Send
 
 block messageBox
-  div.row(ng-controller='messageBoxControl')
+  div#messageBox.row(ng-controller='messageBoxControl')
     div.alert.alert-dismissable.fade.in(ng-repeat='message in messageList',
         ng-class='messageColorSelect(message)')
 
@@ -56,9 +56,9 @@ block userList
 // Main body of the application
 block body
   br
+  block messageBox
   div
     div.row
       block chatbox
       block userList
-    block messageBox
     block sendChatInput

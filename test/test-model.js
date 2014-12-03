@@ -52,8 +52,8 @@ describe('Testing User model', function() {
 
   describe('Test verification of user that does not exist', function() {
     it('should return false', function(done) {
-      database.verifyUser('test_user', 'hello', function(err, isSuccess) {
-        isSuccess.should.equal(false);
+      database.verifyUser('test_user', 'hello', function(err, user) {
+        user.should.equal(null);
         return done();
       });
     });
@@ -63,8 +63,8 @@ describe('Testing User model', function() {
     it('should return false', function(done) {
       database.insertUser('test_user', 'hello', function(err, isSuccess) {
         isSuccess.should.equal(true);
-        database.verifyUser('test_user', 'world', function(err, isSuccess) {
-          isSuccess.should.equal(false);
+        database.verifyUser('test_user', 'world', function(err, user) {
+          user.should.equal(null);
           return done();
         });
       });
@@ -75,8 +75,8 @@ describe('Testing User model', function() {
     it('should insert user into database and correctly check password', function(done) {
       database.insertUser('test_user', 'hello', function(err, isSuccess) {
         isSuccess.should.equal(true);
-        database.verifyUser('test_user', 'hello', function(err, isSuccess) {
-          isSuccess.should.equal(true);
+        database.verifyUser('test_user', 'hello', function(err, user) {
+          user.should.not.equal(null);
           return done();
         });
       });

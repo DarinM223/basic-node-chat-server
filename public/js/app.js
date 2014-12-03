@@ -40,5 +40,9 @@ chatApp.config(function($routeProvider) {
   .when('/signup', {
     templateUrl: '../views/signup.html',
     controller: 'SignupCtrl'
+  })
+  .when('/:groupId', {
+    templateUrl: '../views/group.html',
+    controller: 'GroupCtrl'
   });
 });
