@@ -1,10 +1,6 @@
 'use strict'; 
 
 /*
- * TODO: store the actual socket instead of just the id so that you can send from the socket
- */
-
-/*
  * Stores the sockets for a single server.
  */
 
@@ -17,7 +13,7 @@ exports.addPairing = function(socketid, userid) {
 };
 
 exports.hasUserId = function(userid) {
-  if (userid in userid_to_sockid && userid_to_sockid[userid] != null) {
+  if (userid in userid_to_sockid && userid_to_sockid[userid] !== null) {
     return true;
   } else {
     return false;
@@ -25,7 +21,7 @@ exports.hasUserId = function(userid) {
 };
 
 exports.getSocketId = function(userid) {
-  if (userid in userid_to_sockid && userid_to_sockid[userid] != null) {
+  if (userid in userid_to_sockid && userid_to_sockid[userid] !== null) {
     return userid_to_sockid[userid];
   } else {
     return null;
@@ -33,7 +29,7 @@ exports.getSocketId = function(userid) {
 };
 
 exports.hasSocketId = function(socketid) {
-  if (socketid in sockid_to_userid && sockid_to_userid[socketid] != null) {
+  if (socketid in sockid_to_userid && sockid_to_userid[socketid] !== null) {
     return true;
   } else {
     return false;
@@ -41,7 +37,7 @@ exports.hasSocketId = function(socketid) {
 };
 
 exports.getUserId = function(socketid) {
-  if (socketid in sockid_to_userid && sockid_to_userid[socketid] != null) {
+  if (socketid in sockid_to_userid && sockid_to_userid[socketid] !== null) {
     return sockid_to_userid[socketid];
   } else {
     return null;

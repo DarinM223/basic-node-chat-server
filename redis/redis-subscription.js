@@ -3,6 +3,11 @@
 var redis = require('redis');
 var redisSubClient = redis.createClient();
 var socketManager = require('./socketManager.js');
+var io = null;
+
+function sendUserMessage(message) {
+  io.to(message.receiverId).emit('message', message);
+}
 
 /*
  * Message types:
@@ -10,9 +15,17 @@ var socketManager = require('./socketManager.js');
  * group:groupid
  */
 redisSubClient.on('message', function(channel, message) {
-  /*
-   * TODO: Implement message handling (send to correct socket)
-   */
+  var channelArgs = channel.split(':');
+  if (channelArgs.length === 3 && channelArgs[0] === 'user' && channelArgs[1] === 'message' && message.receiverId) {
+    if (socketManager.hasUserId(message.receiverId)) { // if this server contains the receiver, send through socket
+      sendUserMessage(message);
+    }
+  }  
 });
 
-module.exports = redisSubClient;
+module.exports = function(socketIO) {
+  io = socketIO;
+  return {
+    subClient: redisSubClient
+  };
+};

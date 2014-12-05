@@ -7,7 +7,8 @@ var UserSchema = mongoose.Schema({
   // enforce username uniqueness
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  created: { type: Date, default: Date.now }
+  created: { type: Date, default: Date.now },
+  unreadMessages: { type: Number, default: 0 }
 });
 
 UserSchema.pre('save', function(next) {

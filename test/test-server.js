@@ -244,7 +244,6 @@ describe('Testing Chat Server', function () {
     });
   });
 
-  // TODO: sockets don't check if client sending is correct yet
   describe('Test if logged in client sends private chat message using another username', function() {
     it('should send back an error', function(done) {
       var messageSent = false;
@@ -369,5 +368,4 @@ describe('Testing Chat Server', function () {
       });
     });
   });
-  // TODO: Add more test cases
 });
