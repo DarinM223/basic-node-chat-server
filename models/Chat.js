@@ -7,6 +7,7 @@ var ChatSchema = mongoose.Schema({
   receiverId: { type: mongoose.Schema.Types.ObjectId, required: false },
   groupId: { type: mongoose.Schema.Types.ObjectId, required: true },
   message: { type: String },
+  read: { type: Boolean , default: false }, 
 
   created:  { type: Date, default: Date.now }
 }); 

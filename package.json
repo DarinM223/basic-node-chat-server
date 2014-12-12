@@ -11,6 +11,8 @@
                 "express": "*",
                 "jade": "*",
                 "mongodb": "*",
+                "hiredis": "*",
+                "redis": "*",
                 "body-parser": "*",
                 "underscore": "*",
                 "async": "*",

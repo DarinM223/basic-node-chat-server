@@ -8,7 +8,6 @@ var UserSchema = mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   created: { type: Date, default: Date.now },
-  unreadMessages: { type: Number, default: 0 }
 });
 
 UserSchema.pre('save', function(next) {

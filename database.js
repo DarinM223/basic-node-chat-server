@@ -27,7 +27,7 @@ module.exports = {
     User.findOne({ 'username': username }, function(err, user) {
       // if the username does not exist, return false
       if (err || !user) {
-        return callback(null, null);
+        return callback(err, null);
       }
       user.comparePassword(password, function(err, isPasswordMatch) {
         return callback(err, user);

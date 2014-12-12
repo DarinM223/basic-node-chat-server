@@ -2,7 +2,7 @@
 
 var redis = require('redis');
 var redisSubClient = redis.createClient();
-var socketManager = require('./socketManager.js');
+var socketManager = require('../socketManager.js');
 var io = null;
 
 function sendUserMessage(message) {
@@ -26,6 +26,7 @@ redisSubClient.on('message', function(channel, message) {
 module.exports = function(socketIO) {
   io = socketIO;
   return {
-    subClient: redisSubClient
+    subClient: redisSubClient,
+    send: sendUserMessage
   };
 };

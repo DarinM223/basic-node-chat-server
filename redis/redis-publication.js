@@ -7,29 +7,29 @@ var io = null;
 
 var redisPubClient = redis.createClient();
 
-redisPubClient.addGroupMessage = function(senderid, message) {
+redisPubClient.addGroupMessage = function(senderid, message, callback) {
   var pub = this;
 
+  /*
+   * TODO: Add message to the groups message and do addIndividualMessage to all userids in the group
+   */
 };
 
 /**
- * Add individual message to redis
- * Assume that you are already logged in
+ * Add individual message to both mongo and redis
+ * @param message {Chat} the message to add
+ * @param callback {function(err,boolean)}
  */
-redisPubClient.addIndividualMessage = function(message) {
+redisPubClient.addIndividualMessage = function(message, callback) {
   var pub = this;
 
   pub.get('login:' + message.receiverId, function(err, value) {
     if (err) {
-      console.log(err);
-      return false;
+      return callback(err, null);
     } 
     if (value !== null) { // if receiver is logged in publish to receiver's subscription
       redisPubClient.publish('user:message:' + message.receiverId, message);
     } 
-    /*
-     * TODO: add message to mongodb and redis add number of unread messages to mongo and redis
-     */
     // add message to mongo if succeeds, then add to redis
     var dbMessage = new Chat({
       senderId: message.senderId,
@@ -39,11 +39,32 @@ redisPubClient.addIndividualMessage = function(message) {
     });
     dbMessage.save(function(err, doc) {
       if (err) {
-        return false;
+        return callback(err, null);
       } else {
+        // add message to redis
         redisPubClient.set('message:' + doc._id, doc, function(err) {
-          if (err) return false;
+          if (err) return callback(err, null);
           else {
+            // update number of unread messages
+            redisPubClient.get('user:unread:' + doc.receiverId, function(err, value) {
+              if (err) {
+                return callback(err, null);
+              } 
+              if (value === null) { // if unread messages is not cached in redis, cache it
+                Chat.find({ receiverId: doc.receiverId, read: false }).count(function(err, count) {
+                  if (err) return callback(err, null);
+                  redisPubClient.set('user:unread:' + doc.receiverId, count, function(err) {
+                    if (err) return callback(err, null);
+                    return callback(null, true);
+                  });
+                });
+              } else { // otherwise, increment the cached value
+                redisPubClient.incr('user:unread:' + doc.receiverId, function(err) {
+                  if (err) return callback(err, null);
+                  return callback(null, true);
+                });
+              }
+            });
           }
         });
       }
@@ -51,32 +72,32 @@ redisPubClient.addIndividualMessage = function(message) {
   });
 };
 
-redisPubClient.editGroupMessage = function(groupid, messageid, message) {
+redisPubClient.editGroupMessage = function(groupid, messageid, message, callback) {
   var pub = this;
   /*
    * TODO: check if messageid is in the group's messages, if it is, edit the message in both redis and mongodb, then send editIndividualMessage to all members of the group
    */
 };
 
-redisPubClient.editIndividualMessage = function(receiverid, messageid, message) {
+/**
+ * Edits individual message in both mongodb and redis
+ * @param message {Chat} message to replace with
+ * @param callback {function(err, boolean)} callback
+ */
+redisPubClient.editIndividualMessage = function(message, callback) {
   var pub = this;
-  /*
-   * TODO: edit the message in both redis and mongodb (mongo first, then redis if it succeeds)
-   */
-  /*
-   * TODO: check if sent from group message (check if groupId is present). If it isn't, send a edit message to the id
-   */
-  Chat.update({ _id: messageid }, { message: message }, function(err, result) {
+
+  Chat.update({ _id: message._id }, { message: message }, function(err, result) {
     if (err || !result) {
-      return false;
+      return callback(err, null);
     } else {
-    }
-  });
-  Chat.findOne({ _id: messageid }, function(err, chat) {
-    if (err || !chat) {
-      return false;
-    } else {
-      return true;
+      redisPubClient.set('message:' + message._id, message, function(err) {
+        if (err) {
+          return callback(err, null);
+        } else {
+          return callback(err, true);
+        }
+      });
     }
   });
 };

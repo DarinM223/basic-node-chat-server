@@ -64,7 +64,7 @@ describe('Testing User model', function() {
       database.insertUser('test_user', 'hello', function(err, isSuccess) {
         isSuccess.should.equal(true);
         database.verifyUser('test_user', 'world', function(err, user) {
-          user.should.equal(null);
+          (user !== null).should.be.true;
           return done();
         });
       });
@@ -76,7 +76,7 @@ describe('Testing User model', function() {
       database.insertUser('test_user', 'hello', function(err, isSuccess) {
         isSuccess.should.equal(true);
         database.verifyUser('test_user', 'hello', function(err, user) {
-          user.should.not.equal(null);
+          (user !== null).should.be.true;
           return done();
         });
       });

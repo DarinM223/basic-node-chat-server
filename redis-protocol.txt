@@ -1,0 +1,20 @@
+Redis:
+
+Variables:
+
+login:{user-id} -> boolean - returns true if user id with user-id is
+logged in, otherwise if null or false, not logged in
+
+group:{group-id} -> set - returns a set of user-ids
+
+message:{message-id} -> message - returns the message from the message-id
+
+group:messages:{group-id} -> set - returns a set of messages
+
+user:unread:{user-id} -> int - returns the number of unread messages
+
+Subscriptions:
+
+user:message:{user-id} - receives messages for a specific user with user-id
+
+

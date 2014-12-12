@@ -29,7 +29,7 @@ function onUserLogin(data, callback) {
         if (err) { 
           clientSocket.disconnect();
           return callback(err, null);
-        } else if (value !== null) { // already logged in 
+        } else if (value !== null || value === false) { // already logged in 
           return callback(new Error('You have already logged in'), null);
         } else { // not logged in
           clientSocket.join('registered');
