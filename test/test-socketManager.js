@@ -1,3 +1,5 @@
+'use strict'; 
+
 var should = require('should');
 var socketManager = require('../socketManager.js');
 
@@ -42,7 +44,7 @@ describe('Testing socketManager', function() {
       socketManager.addPairing('socketid', 'userid');
 
       socketManager.hasUserId('userid').should.equal(true);
-      socketManager.hasUserId('socketid').should.equal(true);
+      socketManager.hasSocketId('socketid').should.equal(true);
     });
   });
 
@@ -84,8 +86,8 @@ describe('Testing socketManager', function() {
       socketManager.hasUserId('userid').should.equal(true);
       socketManager.hasSocketId('socketid').should.equal(true);
       socketManager.removePairing('socketid');
-      socketManager.hasUserId('userid').should.equal(true);
-      socketManager.hasSocketId('socketid').should.equal(true);
+      socketManager.hasUserId('userid').should.equal(false);
+      socketManager.hasSocketId('socketid').should.equal(false);
     });
   });
 });

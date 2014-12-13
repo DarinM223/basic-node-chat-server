@@ -1,15 +1,10 @@
 'use strict';
 
 var redis = require('redis');
-var Chat = require('../models/Chat.js');
-
-var io = null;
-
+var Chat = require('./models/Chat.js');
 var redisPubClient = redis.createClient();
 
-redisPubClient.addGroupMessage = function(senderid, message, callback) {
-  var pub = this;
-
+exports.addGroupMessage = function(senderid, message, callback) {
   /*
    * TODO: Add message to the groups message and do addIndividualMessage to all userids in the group
    */
@@ -20,15 +15,13 @@ redisPubClient.addGroupMessage = function(senderid, message, callback) {
  * @param message {Chat} the message to add
  * @param callback {function(err,boolean)}
  */
-redisPubClient.addIndividualMessage = function(message, callback) {
-  var pub = this;
-
-  pub.get('login:' + message.receiverId, function(err, value) {
+exports.addIndividualMessage = function(message, callback) {
+  redisPubClient.get('login:' + message.receiverId, function(err, value) {
     if (err) {
       return callback(err, null);
     } 
     if (value !== null) { // if receiver is logged in publish to receiver's subscription
-      redisPubClient.publish('user:message:' + message.receiverId, message);
+      redisPubClient.publish('user:message:' + message.receiverId, { type: 'add', message: message });
     } 
     // add message to mongo if succeeds, then add to redis
     var dbMessage = new Chat({
@@ -72,8 +65,7 @@ redisPubClient.addIndividualMessage = function(message, callback) {
   });
 };
 
-redisPubClient.editGroupMessage = function(groupid, messageid, message, callback) {
-  var pub = this;
+exports.editGroupMessage = function(groupid, messageid, message, callback) {
   /*
    * TODO: check if messageid is in the group's messages, if it is, edit the message in both redis and mongodb, then send editIndividualMessage to all members of the group
    */
@@ -84,9 +76,10 @@ redisPubClient.editGroupMessage = function(groupid, messageid, message, callback
  * @param message {Chat} message to replace with
  * @param callback {function(err, boolean)} callback
  */
-redisPubClient.editIndividualMessage = function(message, callback) {
-  var pub = this;
-
+exports.editIndividualMessage = function(message, callback) {
+  /*
+   * TODO: if user is logged in, publish message
+   */
   Chat.update({ _id: message._id }, { message: message }, function(err, result) {
     if (err || !result) {
       return callback(err, null);
@@ -100,11 +93,4 @@ redisPubClient.editIndividualMessage = function(message, callback) {
       });
     }
   });
-};
-
-module.exports = function(socketIO) {
-  io = socketIO;
-  return {
-    pubClient: redisPubClient
-  };
 };

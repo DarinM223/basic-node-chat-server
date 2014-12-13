@@ -53,7 +53,7 @@ describe('Testing User model', function() {
   describe('Test verification of user that does not exist', function() {
     it('should return false', function(done) {
       database.verifyUser('test_user', 'hello', function(err, user) {
-        user.should.equal(null);
+        (user === null).should.equal(true);
         return done();
       });
     });

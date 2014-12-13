@@ -7,7 +7,7 @@ var socketManager = require('./socketManager.js');
 var Group = require('./models/Group.js');
 
 var redisSubClient = null;
-var redisPubClient = null;
+var messageManager = require('./messageManager.js');
 
 var io = null;
 
@@ -108,9 +108,9 @@ function onMessage(data, callback) {
       return callback(err, null);
     } else if (value !== null) { // logged in
       if (data.receiverId) { // if data is an individual message
-        redisPubClient.addIndividualMessage(data);
+        messageManager.addIndividualMessage(data);
       } else if (data.groupId) { // if data is a group message
-        redisPubClient.addGroupMessage(data);
+        messageManager.addGroupMessage(data);
       } else { // not valid message
         return callback(new Error('Message is not valid'), null);
       }
@@ -142,9 +142,7 @@ module.exports = function(app, port) {
   var server = app.listen(port);
   io = require('socket.io').listen(server);
   var subscr = require('./redis/redis-subscription.js')(io);
-  var publ = require('./redis/redis-publication.js')(io);
   redisSubClient = subscr.subClient;
-  redisPubClient = publ.pubClient;
 
   io.sockets.on('connection', function(client) {
     client.on('user:login', onUserLogin.bind(client));
