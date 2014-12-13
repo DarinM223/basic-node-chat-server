@@ -14,6 +14,9 @@ describe('Testing redis publication functions', function() {
   });
 
   describe('Test addIndividualMessage', function() {
+    before(function(done) {
+      done();
+    });
     it('should add message to mongodb and redis', function(done) {
       done();
     });

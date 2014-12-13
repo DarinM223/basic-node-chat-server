@@ -2,7 +2,14 @@ Redis:
 
 Variables:
 
-login:{user-id} -> boolean - returns true if user id with user-id is
+login:{user-id} -> boolean - returns true if user id with user-id is logged in
+
+TODO: make return a set of all userids currently login
+that way it will be easy to test if in a set, remove from a set, and clear a set
+
+TODO: make login keys expire after a certain period of time and get renewed if that user
+gets used again
+
 logged in, otherwise if null or false, not logged in
 
 group:{group-id} -> set - returns a set of user-ids

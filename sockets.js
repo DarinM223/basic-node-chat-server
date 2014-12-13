@@ -1,163 +1,153 @@
 /* @flow */
 'use strict';
 
+/*
+ * Functions to abstract the parts used by the socket server
+ * such as logging in, handling messages, joining groups, etc
+ * from the actual socket server
+ */
+
 var User = require('./models/User.js');
 var database = require('./database.js');
 var socketManager = require('./socketManager.js');
 var Group = require('./models/Group.js');
 
-var redisSubClient = null;
+var redisClient = require('./redis/redisClient.js');
+
 var messageManager = require('./messageManager.js');
 
-var io = null;
-
 /**
- * @param {string} data.username
- * @param {string} data.password
+ * @param {string} socketid
+ * @param {string} username
+ * @param {string} password
+ * @param {function(err,string} callback return the user id of the logged in user
  */
-function onUserLogin(data, callback) {
-  var clientSocket = this;
-
-    // verify user from username and password
-  database.verifyUser(data.username, data.password, function(err, user) {
+exports.handleUserLogin = function(socketid, username, password, callback) {
+  // verify user from username and password
+  database.verifyUser(username, password, function(err, user) {
     if (err) {
-      clientSocket.disconnect();
-      return callback(err, null);
+      return callback(err, false);
     } else if (user) {
       // check if user is already logged in through redis
-      redisSubClient.get('login:' + user._id, function(err, value) {
+      redisClient.get('login:' + user._id, function(err, value) {
         if (err) { 
-          clientSocket.disconnect();
-          return callback(err, null);
+          return callback(err, false);
         } else if (value !== null || value === false) { // already logged in 
-          return callback(new Error('You have already logged in'), null);
+          return callback(new Error('You have already logged in'), false);
         } else { // not logged in
-          clientSocket.join('registered');
-
-          socketManager.addPairing(clientSocket.id, user._id);
-          redisSubClient.subscribe('user:message:' + user._id);
-          redisSubClient.set('login:' + user._id, true, function(err) {
+          socketManager.addPairing(socketid, user._id);
+          redisClient.subscribe('user:message:' + user._id);
+          redisClient.set('login:' + user._id, true, function(err) {
             if (err) {
-              clientSocket.disconnect();
-              return callback(err, null);
+              return callback(err, false);
             }
           });
 
-          return callback(null, { username: data.username });
+          return callback(null, userid);
         }
       });
     } else {
-      clientSocket.disconnect();
-      return callback(new Error('Your username or password was incorrect'), null);
+      return callback(new Error('Your username or password was incorrect'), false);
     }
   });
-}
+};
 
 /**
- * @param {string} data.groupId
+ * @param {string} socketid
+ * @param {string} groupId
+ * @param {function(err,boolean)} callback
  */
-function onJoinGroup(data, callback) {
-  var clientSocket = this;
+exports.handleJoinGroup = function(socketid, groupId, callback) {
+  var userid = socketManager.getUserId(socketid);
 
-  var userid = socketManager.getUserId(clientSocket.id);
-
-  redisSubClient.get('login:' + userid, function(err, value) {
+  redisClient.get('login:' + userid, function(err, value) {
     if (err) {
-      return callback(err, null);
+      return callback(err, false);
     } else if (value !== null) { // if logged in
-      if (database.hasGroup(data.groupId)) { // check if group exists
-        Group.update({ _id: data.groupId }, {
-          $addToSet: {
-            users: userid
-          }
-        }, { multi: true }, function(err, result) {
-            if (err || !result) {  // error updating groups
-              callback(new Error('Error updating database'), null);
-            } else {
-              redisSubClient.sadd('group:' + data.groupId, userid, function(err, result) {
-                if (err) {
-                  return callback(err, null);
-                } else {
-                  if (result === 1) {
-                    return callback(null, true);
-                  } else { // user already in group
-                    return callback(new Error('You are already in this group'), null);
-                  }
-                }
-              });
+      database.hasGroup(groupId, function(err, result) {
+        if (!err && result) {
+          Group.update({ _id: groupId }, {
+            $addToSet: {
+              users: userid
             }
+          }, { multi: true }, function(err, result) {
+              if (err || !result) {  // error updating groups
+                callback(new Error('Error updating database'), false);
+              } else {
+                redisClient.sadd('group:' + groupId, userid, function(err, result) {
+                  if (err) {
+                    return callback(err, false);
+                  } else {
+                    if (result === 1) {
+                      return callback(null, true);
+                    } else { // user already in group
+                      return callback(new Error('You are already in this group'), false);
+                    }
+                  }
+                });
+              }
           });
-      } else {
-        return callback(new Error('Group does not exist'), null);
-      }
+        } else {
+          return callback(new Error('Group does not exist'), false);
+        }
+      });
     } else {
-      return callback(new Error('You are not logged in'), null);
+      return callback(new Error('You are not logged in'), false);
     }
   });
-}
+};
 
 /**
- * @param {Chat} data
+ * @param {string} socketid
+ * @param {Chat} chatMessage
+ * @param {function(err,boolean)} callback
  */
-function onMessage(data, callback) {
-  var clientSocket = this;
-
-  var userid = socketManager.getUserId(clientSocket.id);
-  redisSubClient.get('login:' + userid, function(err, value) {
+exports.handleMessage = function(socketid, chatMessage, callback) {
+  var userid = socketManager.getUserId(socketid);
+  redisClient.get('login:' + userid, function(err, value) {
     if (err) {
-      return callback(err, null);
+      return callback(err, false);
     } else if (value !== null) { // logged in
-      if (data.receiverId) { // if data is an individual message
-        messageManager.addIndividualMessage(data);
-      } else if (data.groupId) { // if data is a group message
-        messageManager.addGroupMessage(data);
+      if (chatMessage.receiverId) { // if data is an individual message
+        messageManager.addIndividualMessage(chatMessage, function(err, result) {
+          if (!err && result !== null && result === true) {
+            return callback(null, true);
+          }
+          return callback(err, false);
+        }); 
+      } else if (chatMessage.groupId) { // if data is a group message
+        messageManager.addGroupMessage(chatMessage, function(err, result) {
+          if (!err && result !== null && result === true) {
+            return callback(null, true);
+          }
+          return callback(err, false);
+        });
       } else { // not valid message
-        return callback(new Error('Message is not valid'), null);
+        return callback(new Error('Message is not valid'), false);
       }
     } else { // not logged in
-      return callback(new Error('You are not logged in'), null);
+      return callback(new Error('You are not logged in'), false);
     }
   });
-}
+};
 
-function onDisconnect() {
-  var clientSocket = this;
+/**
+ * @param {string} socketid
+ * @param {function(err,string)} callback returns the user id of the disconnected user
+ */
+exports.handleDisconnect = function(socketid, callback) {
+  if (socketManager.hasSocketId(socketid)) {
+    var disconnected_uid = socketManager.getUserId(socketid);
+    socketManager.removePairing(socketid);
 
-  // emit disconnected message
-  if (socketManager.hasSocketId(clientSocket.id)) {
-    var disconnected_uid = socketManager.getUserId(clientSocket.id);
-    socketManager.removePairing(clientSocket.id);
-
-    // unsubscribe from that user's messages and set logged in as false
-    redisSubClient.unsubscribe('user:message:' + disconnected_uid);
-    redisSubClient.set('login:' + disconnected_uid, false, function(err) {
-      if (err) {
-        console.log(err);
-      }
+    // remove keys with the user id
+    redisClient.del('login:'+disconnected_uid, function(err) {
+      return callback(err, disconnected_uid); // unsubscribe from user id even if setting key fails
     });
   }
-}
+};
 
-module.exports = function(app, port) {
-  var server = app.listen(port);
-  io = require('socket.io').listen(server);
-  var subscr = require('./redis/redis-subscription.js')(io);
-  redisSubClient = subscr.subClient;
-
-  io.sockets.on('connection', function(client) {
-    client.on('user:login', onUserLogin.bind(client));
-    client.on('user:joingroup', onJoinGroup.bind(client));
-    client.on('message', onMessage.bind(client));
-    client.on('disconnect', onDisconnect.bind(client));
-  });
-  return {
-    resetEverything: function() {
-      User.collection.remove({}, function(err, result) {});
-      socketManager.reset();
-    },
-    socketLogin: onUserLogin,
-    socketJoinGroup: onJoinGroup,
-    socketMessage: onMessage,
-    socketDisconnect: onDisconnect
-  };
+exports.resetEverything = function() {
+  User.collection.remove({}, function(err, result) {});
+  socketManager.reset();
 };

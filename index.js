@@ -40,4 +40,4 @@ var port = 3700;
 mongoose.connect('mongodb://localhost:27017/mydb');
 
 // start sockets server
-var sockets = require('./sockets.js')(app, port);
+// var sockets = require('./sockets.js')(app, port);

@@ -1,8 +1,12 @@
 'use strict';
 
-var redis = require('redis');
+/*
+ * Functions to abstract the message handling parts of the application
+ * like adding, editing, and removing (TODO) so that it can be used anywhere
+ */
+
 var Chat = require('./models/Chat.js');
-var redisPubClient = redis.createClient();
+var redisClient = require('./redis/redisClient.js');
 
 exports.addGroupMessage = function(senderid, message, callback) {
   /*
@@ -12,56 +16,48 @@ exports.addGroupMessage = function(senderid, message, callback) {
 
 /**
  * Add individual message to both mongo and redis
- * @param message {Chat} the message to add
- * @param callback {function(err,boolean)}
+ * @param {Chat} message the message to add
+ * @param {function(err,boolean)} callback 
  */
 exports.addIndividualMessage = function(message, callback) {
-  redisPubClient.get('login:' + message.receiverId, function(err, value) {
+  // add message to mongo if succeeds, then add to redis
+  var dbMessage = new Chat({
+    senderId: message.senderId,
+    receiverId: message.receiverId,
+    groupId: message.groupId,
+    message: message.message,
+  });
+  dbMessage.save(function(err, doc) {
     if (err) {
-      return callback(err, null);
-    } 
-    if (value !== null) { // if receiver is logged in publish to receiver's subscription
-      redisPubClient.publish('user:message:' + message.receiverId, { type: 'add', message: message });
-    } 
-    // add message to mongo if succeeds, then add to redis
-    var dbMessage = new Chat({
-      senderId: message.senderId,
-      receiverId: message.receiverId,
-      groupId: message.groupId,
-      message: message.message,
-    });
-    dbMessage.save(function(err, doc) {
-      if (err) {
-        return callback(err, null);
-      } else {
-        // add message to redis
-        redisPubClient.set('message:' + doc._id, doc, function(err) {
-          if (err) return callback(err, null);
-          else {
-            // update number of unread messages
-            redisPubClient.get('user:unread:' + doc.receiverId, function(err, value) {
-              if (err) {
-                return callback(err, null);
-              } 
-              if (value === null) { // if unread messages is not cached in redis, cache it
-                Chat.find({ receiverId: doc.receiverId, read: false }).count(function(err, count) {
-                  if (err) return callback(err, null);
-                  redisPubClient.set('user:unread:' + doc.receiverId, count, function(err) {
-                    if (err) return callback(err, null);
-                    return callback(null, true);
-                  });
-                });
-              } else { // otherwise, increment the cached value
-                redisPubClient.incr('user:unread:' + doc.receiverId, function(err) {
-                  if (err) return callback(err, null);
+      return callback(err, false);
+    } else {
+      // add message to redis
+      redisClient.set('message:' + doc._id, doc, function(err) {
+        if (err) return callback(err, false);
+        else {
+          // update number of unread messages
+          redisClient.get('user:unread:' + doc.receiverId, function(err, value) {
+            if (err) {
+              return callback(err, false);
+            } 
+            if (value === null) { // if unread messages is not cached in redis, cache it
+              Chat.find({ receiverId: doc.receiverId, read: false }).count(function(err, count) {
+                if (err) return callback(err, false);
+                redisClient.set('user:unread:' + doc.receiverId, count, function(err) {
+                  if (err) return callback(err, false);
                   return callback(null, true);
                 });
-              }
-            });
-          }
-        });
-      }
-    });
+              });
+            } else { // otherwise, increment the cached value
+              redisClient.incr('user:unread:' + doc.receiverId, function(err) {
+                if (err) return callback(err, false);
+                return callback(null, true);
+              });
+            }
+          });
+        }
+      });
+    }
   });
 };
 
@@ -73,20 +69,17 @@ exports.editGroupMessage = function(groupid, messageid, message, callback) {
 
 /**
  * Edits individual message in both mongodb and redis
- * @param message {Chat} message to replace with
- * @param callback {function(err, boolean)} callback
+ * @param {Chat} message message to replace with
+ * @param {function(err,boolean)} callback
  */
 exports.editIndividualMessage = function(message, callback) {
-  /*
-   * TODO: if user is logged in, publish message
-   */
   Chat.update({ _id: message._id }, { message: message }, function(err, result) {
     if (err || !result) {
-      return callback(err, null);
+      return callback(err, false);
     } else {
-      redisPubClient.set('message:' + message._id, message, function(err) {
+      redisClient.set('message:' + message._id, message, function(err) {
         if (err) {
-          return callback(err, null);
+          return callback(err, false);
         } else {
           return callback(err, true);
         }

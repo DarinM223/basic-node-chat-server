@@ -1,11 +1,8 @@
 'use strict';
 
 var should = require('should');
-var express = require('express');
-var app = express();
-var TEST_PORT = 3000;
-var sockets = require('../sockets.js')(app, TEST_PORT);
-var redisClient = require('redis').createClient();
+var sockets = require('../sockets.js');
+var redisClient = require('../redis/redisClient.js');
 
 describe('Testing sockets', function() {
   describe('Test onUserLogin', function() {
@@ -17,9 +14,6 @@ describe('Testing sockets', function() {
     });
 
     it('should add socket manager k/v pair', function(done) {
-      done();
-    });
-    it('should subscribe to user messages', function(done) {
       done();
     });
     it('should set login key', function(done) {
