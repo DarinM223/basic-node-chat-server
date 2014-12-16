@@ -12,7 +12,7 @@ var database = require('./database.js');
 var socketManager = require('./socketManager.js');
 var Group = require('./models/Group.js');
 
-var redisClient = require('./redis/redisClient.js');
+var redisClient = require('./redis/redisClient.js')();
 
 var redisManager = require('./redisManager.js');
 

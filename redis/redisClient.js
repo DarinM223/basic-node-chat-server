@@ -9,7 +9,8 @@ var testing = false;
  * Also used to use a test database if in testing mode
  */
 
-module.exports = function(test) {
+module.exports = function() {
+  var test = arguments[0];
   if (test !== null && test === true) {
     testing = true;
   } else if (test !== null && test === false) {
@@ -18,13 +19,14 @@ module.exports = function(test) {
 
   if (testing === true) {
     if (redisTestClient === null) {
-      redisTestClient = require('fakeredis').createClient();
-      // redisTestClient = require('redis').createClient(1234);
+      var _redis = require('fakeredis');
+      redisTestClient = _redis.createClient();
     }
     return redisTestClient;
   } else {
     if (redisClient === null) {
-      redisClient = require('redis').createClient();
+      var _redis = require('redis');
+      redisClient = _redis.createClient();
     }
     return redisClient;
   }

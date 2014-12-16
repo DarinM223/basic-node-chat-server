@@ -6,7 +6,7 @@
  */
 
 var Chat = require('./models/Chat.js');
-var redisClient = require('./redis/redisClient.js');
+var redisClient = require('./redis/redisClient.js')();
 
 exports.addGroupMessage = function(senderid, message, callback) {
   /*
@@ -17,7 +17,7 @@ exports.addGroupMessage = function(senderid, message, callback) {
 /**
  * Add individual message to both mongo and redis
  * @param {Chat} message the message to add
- * @param {function(err,boolean)} callback 
+ * @param {function(err,ObjectId)} callback returns the added message id or null if failed
  */
 exports.addIndividualMessage = function(message, callback) {
   // add message to mongo if succeeds, then add to redis
@@ -29,29 +29,29 @@ exports.addIndividualMessage = function(message, callback) {
   });
   dbMessage.save(function(err, doc) {
     if (err) {
-      return callback(err, false);
+      return callback(err, null);
     } else {
       // add message to redis
-      redisClient.set('message:' + doc._id, doc, function(err) {
-        if (err) return callback(err, false);
+      redisClient.set('message:' + doc._id, JSON.stringify(doc), function(err) {
+        if (err) return callback(err, null);
         else {
           // update number of unread messages
           redisClient.get('user:unread:' + doc.receiverId, function(err, value) {
             if (err) {
-              return callback(err, false);
+              return callback(err, null);
             } 
             if (value === null) { // if unread messages is not cached in redis, cache it
               Chat.find({ receiverId: doc.receiverId, read: false }).count(function(err, count) {
-                if (err) return callback(err, false);
+                if (err) return callback(err, null);
                 redisClient.set('user:unread:' + doc.receiverId, count, function(err) {
-                  if (err) return callback(err, false);
-                  return callback(null, true);
+                  if (err) return callback(err, null);
+                  return callback(null, doc._id);
                 });
               });
             } else { // otherwise, increment the cached value
               redisClient.incr('user:unread:' + doc.receiverId, function(err) {
-                if (err) return callback(err, false);
-                return callback(null, true);
+                if (err) return callback(err, null);
+                return callback(null, doc._id);
               });
             }
           });
@@ -68,29 +68,24 @@ exports.editGroupMessage = function(groupid, messageid, message, callback) {
 };
 
 /**
- * Edits individual message in both mongodb and redis
- * @param {Chat} message message to replace with
+ * Edits an individual message in both mongodb and redis
+ * @param {ObjectId/string} messageid id of message to replace with
+ * @param {string} message message to replace with
  * @param {function(err,boolean)} callback
  */
-exports.editIndividualMessage = function(message, callback) {
-  Chat.update({ _id: message._id }, { message: message }, function(err, result) {
-    if (err || !result) {
-      return callback(err, false);
-    } else {
-      redisClient.set('message:' + message._id, message, function(err) {
-        if (err) {
-          return callback(err, false);
-        } else {
-          return callback(err, true);
-        }
-      });
-    }
+exports.editIndividualMessage = function(messageid, message, callback) {
+  Chat.findOneAndUpdate({ _id: messageid }, {$set: {message: message}}, { new: true }, function(err, result) {
+    if (err || !result) return callback(err, false);
+    redisClient.set('message:' + messageid, JSON.stringify(result), function(err) {
+      if (err) return callback(err, false);
+      return callback(err, true);
+    });
   });
 };
 
 /**
  * Checks if group already exists
- * @param {string} groupid
+ * @param {ObjectId/string} groupid
  * @param {function(err,boolean)} callback
  */
 exports.hasGroup = function(groupid, callback) {
@@ -100,9 +95,13 @@ exports.hasGroup = function(groupid, callback) {
       return callback(err, false);
     } else if (result) { // group already in cache
       return callback(null, true);
-    } else { // group not in cache, check database
-      Group.find({ _id: groupid }, function(err, result) {
-        return callback(err, (result !== null));
+    } else { // group not in cache, check database and add to cache
+      Group.findById(groupid, function(err, result) {
+        if (result === null) return callback(null, false);
+        redisClient.set('group:' + groupid, JSON.stringify(result), function(err, success) {
+          if (err || !success) return callback(err, false);
+          return callback(null, true);
+        });
       });
     }
   });
