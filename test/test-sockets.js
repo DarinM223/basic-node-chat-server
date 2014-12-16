@@ -2,7 +2,7 @@
 
 var should = require('should');
 var sockets = require('../sockets.js');
-var redisClient = require('../redis/redisClient.js');
+var redisClient = require('../redis/redisClient.js')(true);
 
 describe('Testing sockets', function() {
   describe('Test onUserLogin', function() {
@@ -43,7 +43,7 @@ describe('Testing sockets', function() {
   describe('Test onDisconnect', function() {
     var userid = '23456678';
     beforeEach(function(done) {
-      sockets.socketDisconnect();
+      sockets.handleDisconnect();
       done();
     });
 

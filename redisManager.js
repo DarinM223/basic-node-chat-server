@@ -87,3 +87,23 @@ exports.editIndividualMessage = function(message, callback) {
     }
   });
 };
+
+/**
+ * Checks if group already exists
+ * @param {string} groupid
+ * @param {function(err,boolean)} callback
+ */
+exports.hasGroup = function(groupid, callback) {
+  var Group = require('./models/Group.js');
+  redisClient.exists('group:' + groupid, function(err, result) {
+    if (err) {
+      return callback(err, false);
+    } else if (result) { // group already in cache
+      return callback(null, true);
+    } else { // group not in cache, check database
+      Group.find({ _id: groupid }, function(err, result) {
+        return callback(err, (result !== null));
+      });
+    }
+  });
+};

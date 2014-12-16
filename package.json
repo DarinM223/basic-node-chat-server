@@ -1,29 +1,30 @@
 {
-        "name": "RealTimeWebChat",
-        "version": "0.0.0",
-        "description": "Real time web chat",
-        "scripts": {
-            "start": "./node_modules/.bin/supervisor index.js",
-            "test": "./node_modules/.bin/mocha"
-        },
-        "dependencies": {
-                "socket.io": "*",
-                "express": "*",
-                "jade": "*",
-                "mongodb": "*",
-                "hiredis": "*",
-                "redis": "*",
-                "body-parser": "*",
-                "underscore": "*",
-                "async": "*",
-                "supervisor": "*",
-                "should": "*",
-                "socket.io-client": "*",
-                "mocha": "*",
-                "bcrypt": "*", 
-                "mongoose": "*",
-                "passport": "*",
-                "passport-http": "*"
-        },
-        "author": "developer"
+  "name": "RealTimeWebChat",
+  "version": "0.0.0",
+  "description": "Real time web chat",
+  "scripts": {
+    "start": "./node_modules/.bin/supervisor index.js",
+    "test": "./node_modules/.bin/mocha"
+  },
+  "dependencies": {
+    "async": "*",
+    "bcrypt": "*",
+    "body-parser": "*",
+    "express": "*",
+    "fakeredis": "^0.2.2",
+    "hiredis": "*",
+    "jade": "*",
+    "mocha": "*",
+    "mongodb": "*",
+    "mongoose": "*",
+    "passport": "*",
+    "passport-http": "*",
+    "redis": "*",
+    "should": "*",
+    "socket.io": "*",
+    "socket.io-client": "*",
+    "supervisor": "*",
+    "underscore": "*"
+  },
+  "author": "developer"
 }

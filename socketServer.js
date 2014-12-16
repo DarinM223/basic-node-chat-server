@@ -8,7 +8,6 @@
  */
 
 var io = null;
-var redisSubClient = require('redis').createClient();
 var redisPubClient = require('redis').createClient();
 var sockets = require('./sockets.js');
 

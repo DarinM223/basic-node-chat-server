@@ -14,7 +14,7 @@ var Group = require('./models/Group.js');
 
 var redisClient = require('./redis/redisClient.js');
 
-var messageManager = require('./messageManager.js');
+var redisManager = require('./redisManager.js');
 
 /**
  * @param {string} socketid
@@ -64,7 +64,7 @@ exports.handleJoinGroup = function(socketid, groupId, callback) {
     if (err) {
       return callback(err, false);
     } else if (value !== null) { // if logged in
-      database.hasGroup(groupId, function(err, result) {
+      redisManager.hasGroup(groupId, function(err, result) {
         if (!err && result) {
           Group.update({ _id: groupId }, {
             $addToSet: {
@@ -109,14 +109,14 @@ exports.handleMessage = function(socketid, chatMessage, callback) {
       return callback(err, false);
     } else if (value !== null) { // logged in
       if (chatMessage.receiverId) { // if data is an individual message
-        messageManager.addIndividualMessage(chatMessage, function(err, result) {
+        redisManager.addIndividualMessage(chatMessage, function(err, result) {
           if (!err && result !== null && result === true) {
             return callback(null, true);
           }
           return callback(err, false);
         }); 
       } else if (chatMessage.groupId) { // if data is a group message
-        messageManager.addGroupMessage(chatMessage, function(err, result) {
+        redisManager.addGroupMessage(chatMessage, function(err, result) {
           if (!err && result !== null && result === true) {
             return callback(null, true);
           }

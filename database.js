@@ -4,11 +4,9 @@
 /*
  * Functions to abstract database functionality like
  * logging in, signing up, and checking groups from the application
- * TODO: merge messageManager into this
  */
 
 var User = require('./models/User.js');
-var redisSubClient = require('./redis/redis-subscription.js');
 var socketManager = require('./socketManager.js');
 
 /**
@@ -53,21 +51,3 @@ exports.verifyUser = function(username, password, callback) {
   });
 };
 
-/**
- * Checks if group already exists
- * @param {string} groupid
- * @param {function(err,boolean)} callback
- */
-exports.hasGroup = function(groupid, callback) {
-  redisSubClient.exists('group:' + groupid, function(err, result) {
-    if (err) {
-      return callback(err, false);
-    } else if (result) { // group already in cache
-      return callback(null, true);
-    } else { // group not in cache, check database
-      Group.find({ _id: groupid }, function(err, result) {
-        return callback(err, (result !== null));
-      });
-    }
-  });
-};
