@@ -7,6 +7,7 @@ if (mongoose.connection.readyState === 0) {
 
 var should = require('should');
 var Chat = require('../models/Chat.js');
+var Group = require('../models/Group.js');
 var redisClient = require('../redis/redisClient.js')(true); // test client
 
 var async = require('async');
@@ -134,12 +135,60 @@ describe('Testing redis publication functions', function() {
   });
 
   describe('Test hasGroup', function() {
-    it('should correctly check if there is a group in mongodb and redis', function(done) {
-      done();
+    var groupid = null;
+    beforeEach(function(done) {
+      redisClient.flushdb();
+      Group.remove({}, function(err, result) {
+        // add a new group
+        var group = new Group({
+            createdUser: mongoose.Types.ObjectId('123456789012'),
+            name: 'New group',
+        });
+        group.save(function(err, doc) {
+          (err === null).should.be.true;
+          groupid = doc._id;
+          done();
+        });
+      });
+    });
+    afterEach(function(done) {
+      redisClient.flushdb();
+      Group.remove({}, function(err, result) {
+        done();
+      });
+    });
+
+    it('should return true if there is a group', function(done) {
+      redisManager.hasGroup(groupid, function(err, result) {
+        result.should.be.true;
+        done();
+      });
+    });
+
+    it('should return false if there is not a group', function(done) {
+      redisClient.flushdb();
+      Group.remove({}, function(err, result) {
+        redisManager.hasGroup(groupid, function(err, result) {
+          result.should.be.false;
+          done();
+        });
+      });
     });
 
     it('should add group to cache if not already', function(done) {
-      done();
+      redisClient.get('group:' + groupid, function(err, strValue) {
+        (strValue === null).should.be.true; // group should not be in cache before calling hasGroup
+        redisManager.hasGroup(groupid, function(err, result) {
+          result.should.be.true;
+          redisClient.get('group:' + groupid, function(err, strValue) {
+            (strValue === null).should.be.false; // group should be in cache after calling hasGroup
+            var value = JSON.parse(strValue);
+            mongoose.Types.ObjectId(value.createdUser).equals(mongoose.Types.ObjectId('123456789012')).should.be.true;
+            value.name.should.equal('New group');
+            done();
+          });
+        });
+      });
     });
   });
 });
