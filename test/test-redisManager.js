@@ -176,15 +176,13 @@ describe('Testing redis publication functions', function() {
     });
 
     it('should add group to cache if not already', function(done) {
-      redisClient.get('group:' + groupid, function(err, strValue) {
-        (strValue === null).should.be.true; // group should not be in cache before calling hasGroup
+      redisClient.smembers('group:' + groupid, function(err, members) {
+        members.length.should.equal(0);
         redisManager.hasGroup(groupid, function(err, result) {
           result.should.be.true;
-          redisClient.get('group:' + groupid, function(err, strValue) {
-            (strValue === null).should.be.false; // group should be in cache after calling hasGroup
-            var value = JSON.parse(strValue);
-            mongoose.Types.ObjectId(value.createdUser).equals(mongoose.Types.ObjectId('123456789012')).should.be.true;
-            value.name.should.equal('New group');
+          redisClient.smembers('group:' + groupid, function(err, members) {
+            (err === null).should.be.true;
+            members.length.should.equal(1);
             done();
           });
         });

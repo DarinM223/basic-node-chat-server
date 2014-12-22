@@ -6,9 +6,11 @@
  */
 
 var Chat = require('./models/Chat.js');
+var Group = require('./models/Group.js');
 var redisClient = require('./redis/redisClient.js')();
+var async = require('async');
 
-exports.addGroupMessage = function(senderid, message, callback) {
+exports.addGroupMessage = function addGroupMessage(senderid, message, callback) {
   /*
    * TODO: Add message to the groups message and do addIndividualMessage to all userids in the group
    */
@@ -19,7 +21,7 @@ exports.addGroupMessage = function(senderid, message, callback) {
  * @param {Chat} message the message to add
  * @param {function(err,ObjectId)} callback returns the added message id or null if failed
  */
-exports.addIndividualMessage = function(message, callback) {
+exports.addIndividualMessage = function addIndividualMessage(message, callback) {
   // add message to mongo if succeeds, then add to redis
   var dbMessage = new Chat({
     senderId: message.senderId,
@@ -61,7 +63,7 @@ exports.addIndividualMessage = function(message, callback) {
   });
 };
 
-exports.editGroupMessage = function(groupid, messageid, message, callback) {
+exports.editGroupMessage = function editGroupMessage(groupid, messageid, message, callback) {
   /*
    * TODO: check if messageid is in the group's messages, if it is, edit the message in both redis and mongodb, then send editIndividualMessage to all members of the group
    */
@@ -73,7 +75,7 @@ exports.editGroupMessage = function(groupid, messageid, message, callback) {
  * @param {string} message message to replace with
  * @param {function(err,boolean)} callback
  */
-exports.editIndividualMessage = function(messageid, message, callback) {
+exports.editIndividualMessage = function editIndividualMessage(messageid, message, callback) {
   Chat.findOneAndUpdate({ _id: messageid }, {$set: {message: message}}, { new: true }, function(err, result) {
     if (err || !result) return callback(err, false);
     redisClient.set('message:' + messageid, JSON.stringify(result), function(err) {
@@ -83,26 +85,49 @@ exports.editIndividualMessage = function(messageid, message, callback) {
   });
 };
 
+function initRedisGroup(groupId, callback) {
+  Group.findById(groupId, function(err, result) {
+    if (result === null) {
+      callback(err, false);
+    } else {
+      // first add the user who created the group to the set
+      redisClient.sadd('group:' + groupId, (result.createdUser+''), function(err) {
+        if (err) {
+          return callback(err, false);
+        }
+        // then add every joined user to the set
+        async.each(result.users, function(userid, callback) {
+          redisClient.sadd('group:' + groupId, userid+'', function(err) {
+            if (err) {
+              return callback(err);
+            }
+            return callback();
+          });
+        }, function(err) {
+          if (err) {
+            return callback(err, false);
+          } else {
+            return callback(null, true);
+          }
+        });
+      });
+    }
+  });
+}
+
 /**
  * Checks if group already exists
  * @param {ObjectId/string} groupid
  * @param {function(err,boolean)} callback
  */
-exports.hasGroup = function(groupid, callback) {
-  var Group = require('./models/Group.js');
+exports.hasGroup = function hasGroup(groupid, callback) {
   redisClient.exists('group:' + groupid, function(err, result) {
     if (err) {
       return callback(err, false);
     } else if (result) { // group already in cache
       return callback(null, true);
     } else { // group not in cache, check database and add to cache
-      Group.findById(groupid, function(err, result) {
-        if (result === null) return callback(null, false);
-        redisClient.set('group:' + groupid, JSON.stringify(result), function(err, success) {
-          if (err || !success) return callback(err, false);
-          return callback(null, true);
-        });
-      });
+      initRedisGroup(groupid, callback);
     }
   });
 };
