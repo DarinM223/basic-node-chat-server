@@ -204,6 +204,8 @@ exports.handleDisconnect = function handleDisconnect(socketid, callback) {
     redisClient.del('login:'+disconnected_uid, function(err) {
       return callback(err, disconnected_uid); // unsubscribe from user id even if setting key fails
     });
+  } else {
+    return callback(new Error('There is no user associated with this socket id'), null);
   }
 };
 
