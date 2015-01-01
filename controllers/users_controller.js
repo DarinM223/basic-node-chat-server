@@ -1,7 +1,6 @@
 'use strict';
 
 var User = require('../models/User.js');
-var database = require('../database.js');
 
 /**
  * @method POST
@@ -10,7 +9,7 @@ var database = require('../database.js');
  */
 exports.newUser = function(req, res) {
   if (req && req.body && req.body.username && req.body.password) {
-    database.insertUser(req.body.username, req.body.password, function(err, success) {
+    User.new(req.body.username, req.body.password, function(err, success) {
       if (err) {
         console.log(err);
       } else if (success) {

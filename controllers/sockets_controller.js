@@ -8,7 +8,6 @@
  */
 
 var User = require('../models/User.js');
-var database = require('../database.js');
 var socketManager = require('../socketManager.js');
 var Group = require('../models/Group.js');
 
