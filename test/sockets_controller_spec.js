@@ -6,22 +6,23 @@ if (mongoose.connection.readyState === 0) {
 }
 
 var should = require('should');
-var sockets = require('../sockets.js');
+var sockets = require('../controllers/sockets_controller.js');
 var redisClient = require('../redis/redisClient.js')(true);
-var database = require('../database.js');
 var socketManager = require('../socketManager.js');
 
 var User = require('../models/User.js');
 var Group = require('../models/Group.js');
 
 describe('Testing sockets', function() {
+
+
   describe('Test handleUserLogin', function() {
     var _userid = null;
     before(function(done) {
       redisClient.flushdb();
       socketManager.reset();
 
-      database.insertUser('newuser', 'hello', function(err, success) {
+      User.new('newuser', 'hello', function(err, success) {
         sockets.handleUserLogin('1234', 'newuser', 'hello', function(err, userid) {
           (err === null).should.be.true;
           (userid !== null).should.be.true;
@@ -37,6 +38,10 @@ describe('Testing sockets', function() {
       sockets.resetEverything();
       done();
     });
+
+    /*
+     * TODO: add tests if username/password doesn't match
+     */
 
     it('should add socket manager k/v pair', function(done) {
       socketManager.hasSocketId('1234').should.be.true;
@@ -59,15 +64,16 @@ describe('Testing sockets', function() {
     });
   });
 
+
   describe('Test handleJoinGroup', function() {
     var _userid = null;
     var _groupid = null;
 
-    before(function(done) {
+    beforeEach(function(done) {
       redisClient.flushdb();
       socketManager.reset();
 
-      database.insertUser('newuser', 'hello', function(err, success) {
+      User.new('newuser', 'hello', function(err, success) {
         sockets.handleUserLogin('1234', 'newuser', 'hello', function(err, userid) {
           (err === null).should.be.true;
           _userid = userid;
@@ -76,7 +82,7 @@ describe('Testing sockets', function() {
       });
     });
 
-    after(function(done) {
+    afterEach(function(done) {
       redisClient.flushdb();
       socketManager.reset();
       sockets.resetEverything();
@@ -84,8 +90,30 @@ describe('Testing sockets', function() {
         _groupid = null;
         User.remove({}, function(err, result) {
           _userid = null;
+          done();
         });
-        done();
+      });
+    });
+
+    it('should add the userid to the group in mongodb', function(done) {
+      var newGroup = new Group({
+        createdUser: mongoose.Types.ObjectId(_userid),
+        name: 'New group'
+      });
+      newGroup.save(function(err, doc) {
+        (err === null).should.be.true;
+        User.new('anotheruser', 'hello', function(err, success) {
+          sockets.handleUserLogin('4567', 'anotheruser', 'hello', function(err, userid) {
+            _groupid = doc._id;
+            sockets.handleJoinGroup('4567', _groupid, function(err, success) {
+              success.should.be.true;
+              Group.findById(_groupid, function(err, group) {
+                (group.users.length === 1).should.be.true;
+                done();
+              });
+            });
+          });
+        });
       });
     });
 
@@ -97,7 +125,7 @@ describe('Testing sockets', function() {
       });
     });
     
-    it('should fail if user is created the group', function(done) {
+    it('should fail if user created the group', function(done) {
       var newGroup = new Group({
         createdUser: mongoose.Types.ObjectId(_userid),
         name: 'New group'
@@ -120,7 +148,7 @@ describe('Testing sockets', function() {
     it('should fail if user is already in the group', function(done) {
       var _anotherGroupId = null;
       // create a new user to test joining a new user twice
-      database.insertUser('anotheruser', 'hello', function(err, success) {
+      User.new('anotheruser', 'hello', function(err, success) {
         sockets.handleUserLogin('4567', 'anotheruser', 'hello', function(err, userid) {
           (err === null).should.be.true;
 
@@ -147,27 +175,15 @@ describe('Testing sockets', function() {
         });
       });
     });
-
-    it('should add the userid to the group in mongodb', function(done) {
-      Group.findById(_groupid, function(err, group) {
-        (group.users.length === 1).should.be.true;
-        done();
-      });
-    });
-
-    it('should add the userid to the set in redis', function(done) {
-      redisClient.sismember('group:' + _groupid, _userid+'', function(err, result) {
-        result.should.equal(1);
-        done();
-      });
-    });
   });
+
 
   describe('Test handleMessage', function() {
     it('should work', function(done) {
       done();
     });
   });
+
 
   describe('Test handleDisconnect', function() {
     var _userid = null;
@@ -176,7 +192,7 @@ describe('Testing sockets', function() {
       socketManager.reset();
 
       // create and log in test user
-      database.insertUser('newuser', 'hello', function(err, success) {
+      User.new('newuser', 'hello', function(err, success) {
         sockets.handleUserLogin('1234', 'newuser', 'hello', function(err, userid) {
           (err === null).should.be.true;
           _userid = userid;

@@ -16,6 +16,35 @@ exports.addGroupMessage = function addGroupMessage(senderid, message, callback) 
    */
 };
 
+function incrementUnreadMessages(messageId, receiverId, callback) {
+  // update number of unread messages
+  redisClient.get('user:unread:' + receiverId, function(err, value) {
+    if (err) {
+      return callback(err, null);
+    } 
+    if (value === null) { // if unread messages is not cached in redis, cache it
+      Chat.find({ receiverId: receiverId, read: false }).count(function(err, count) {
+        if (err) {
+          return callback(err, null);
+        }
+        redisClient.set('user:unread:' + receiverId, count, function(err) {
+          if (err) {
+            return callback(err, null);
+          }
+          return callback(null, messageId);
+        });
+      });
+    } else { // otherwise, increment the cached value
+      redisClient.incr('user:unread:' + receiverId, function(err) {
+        if (err) {
+          return callback(err, null);
+        }
+        return callback(null, messageId);
+      });
+    }
+  });
+}
+
 /**
  * Add individual message to both mongo and redis
  * @param {Chat} message the message to add
@@ -35,29 +64,10 @@ exports.addIndividualMessage = function addIndividualMessage(message, callback) 
     } else {
       // add message to redis
       redisClient.set('message:' + doc._id, JSON.stringify(doc), function(err) {
-        if (err) return callback(err, null);
-        else {
-          // update number of unread messages
-          redisClient.get('user:unread:' + doc.receiverId, function(err, value) {
-            if (err) {
-              return callback(err, null);
-            } 
-            if (value === null) { // if unread messages is not cached in redis, cache it
-              Chat.find({ receiverId: doc.receiverId, read: false }).count(function(err, count) {
-                if (err) return callback(err, null);
-                redisClient.set('user:unread:' + doc.receiverId, count, function(err) {
-                  if (err) return callback(err, null);
-                  return callback(null, doc._id);
-                });
-              });
-            } else { // otherwise, increment the cached value
-              redisClient.incr('user:unread:' + doc.receiverId, function(err) {
-                if (err) return callback(err, null);
-                return callback(null, doc._id);
-              });
-            }
-          });
+        if (err) {
+          return callback(err, null);
         }
+        return incrementUnreadMessages(doc._id, doc.receiverId, callback);
       });
     }
   });
@@ -77,9 +87,13 @@ exports.editGroupMessage = function editGroupMessage(groupid, messageid, message
  */
 exports.editIndividualMessage = function editIndividualMessage(messageid, message, callback) {
   Chat.findOneAndUpdate({ _id: messageid }, {$set: {message: message}}, { new: true }, function(err, result) {
-    if (err || !result) return callback(err, false);
+    if (err || !result) {
+      return callback(err, false);
+    }
     redisClient.set('message:' + messageid, JSON.stringify(result), function(err) {
-      if (err) return callback(err, false);
+      if (err) {
+        return callback(err, false);
+      }
       return callback(err, true);
     });
   });

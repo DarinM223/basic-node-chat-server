@@ -10,18 +10,8 @@ that way it will be easy to test if in a set, remove from a set, and clear a set
 TODO: make login keys expire after a certain period of time and get renewed if that user
 gets used again
 
-logged in, otherwise if null or false, not logged in
-
-group:{group-id} -> set - returns a set of user-ids
-
-message:{message-id} -> message - returns the message from the message-id
-
-group:messages:{group-id} -> set - returns a set of messages
-
 user:unread:{user-id} -> int - returns the number of unread messages
 
 Subscriptions:
 
 user:message:{user-id} - receives messages for a specific user with user-id
-
-

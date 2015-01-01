@@ -7,16 +7,14 @@
  * from the actual socket server
  */
 
-var User = require('./models/User.js');
-var database = require('./database.js');
-var socketManager = require('./socketManager.js');
-var Group = require('./models/Group.js');
+var User = require('../models/User.js');
+var database = require('../database.js');
+var socketManager = require('../socketManager.js');
+var Group = require('../models/Group.js');
 
 var mongoose = require('mongoose');
 
-var redisClient = require('./redis/redisClient.js')();
-
-var redisManager = require('./redisManager.js');
+var redisClient = require('../redis/redisClient.js')();
 
 /**
  * Adds socketid/userid pairing and sets the redis login key
@@ -28,11 +26,7 @@ var redisManager = require('./redisManager.js');
 function setLoginKey(socketid, userid, callback) {
   socketManager.addPairing(socketid, userid);
   redisClient.set('login:' + userid, 1, function(err) {
-    if (err) {
-      return callback(err, false);
-    } else {
-      return callback(null, userid);
-    }
+    return callback(err, userid);
   });
 }
 
@@ -44,7 +38,7 @@ function setLoginKey(socketid, userid, callback) {
  */
 exports.handleUserLogin = function handleUserLogin(socketid, username, password, callback) {
   // verify user from username and password
-  database.verifyUser(username, password, function(err, user) {
+  User.verify(username, password, function(err, user) {
     if (err) {
       return callback(err, false);
     } else if (user) {
@@ -54,9 +48,9 @@ exports.handleUserLogin = function handleUserLogin(socketid, username, password,
           return callback(err, false);
         } else if (value !== null || value === false) { // already logged in 
           return callback(new Error('You have already logged in'), false);
-        } else { // not logged in
-          return setLoginKey(socketid, user._id, callback);
-        }
+        } 
+        // not logged in
+        return setLoginKey(socketid, user._id, callback);
       });
     } else {
       return callback(new Error('Your username or password was incorrect'), false);
@@ -71,28 +65,24 @@ exports.handleUserLogin = function handleUserLogin(socketid, username, password,
  * @param {function(err,boolean)} callback
  */
 function addUserToGroup(groupId, userId, callback) {
-  Group.update({ _id: mongoose.Types.ObjectId(groupId) }, {
-    $addToSet: {
-      users: userId
+  Group.findById(groupId, function(err, group) {
+    if (group.createdUser.equals(mongoose.Types.ObjectId(userId))) {
+      return callback(null, false);
+    } else if (group.users.indexOf(mongoose.Types.ObjectId(userId)) > -1) {
+      return callback(null, false);
     }
-  }, { multi: true }, function(err) {
-    if (err) {
-      return callback(err, false);
-    }
-    redisClient.sismember('group:' + groupId, userId, function(err, result) {
+    Group.update({ _id: mongoose.Types.ObjectId(groupId) }, {
+      $addToSet: {
+        users: userId
+      }
+    }, { multi: true }, function(err, numChanged) {
       if (err) {
         return callback(err, false);
       }
-      if (result === 1) {
-        return callback(null, false);
-      } else {
-        redisClient.sadd('group:' + groupId, userId, function(err) {
-          if (err) {
-            return callback(err, false);
-          }
-          return callback(null, true);
-        });
+      if (numChanged === 1) {
+        return callback(null, true);
       }
+      return callback(null, false);
     });
   });
 }
@@ -109,7 +99,7 @@ exports.handleJoinGroup = function handleJoinGroup(socketid, groupId, callback) 
     if (err) {
       return callback(err, false);
     } else if (value !== null) { // if logged in
-      redisManager.hasGroup(groupId, function(err, result) {
+      Group.exists(groupId, function(err, result) {
         if (!err && result) {
           return addUserToGroup(groupId+'', userid+'', callback);
         } else {
@@ -144,12 +134,11 @@ exports.handleLeaveGroup = function handleLeaveGroup(socketid, groupId, callback
   redisClient.get('login:' + userid, function(err, value) {
     if (err) {
     } else if (value !== null) {
-      redisManager.hasGroup(groupId, function(err, result) {
+      Group.exists(groupId, function(err, result) {
         if (!err && result) {
           return removeUserFromGroup(groupId+'', userid+'', callback);
-        } else {
-          return callback(new Error('Group does not exist'), false);
-        }
+        } 
+        return callback(new Error('Group does not exist'), false);
       });
     } else {
       return callback(new Error('You are not logged in'), false);
@@ -169,19 +158,20 @@ exports.handleMessage = function handleMessage(socketid, chatMessage, callback) 
       return callback(err, false);
     } else if (value !== null) { // logged in
       if (chatMessage.receiverId) { // if data is an individual message
-        redisManager.addIndividualMessage(chatMessage, function(err, result) {
-          if (!err && result !== null && result === true) {
+        Chat.new(chatMessage, function(err, result) {
+          if (!err && result !== null) {
             return callback(null, true);
           }
           return callback(err, false);
         }); 
       } else if (chatMessage.groupId) { // if data is a group message
-        redisManager.addGroupMessage(chatMessage, function(err, result) {
-          if (!err && result !== null && result === true) {
-            return callback(null, true);
-          }
-          return callback(err, false);
-        });
+        // TODO: handle group messages
+        //redisManager.addGroupMessage(chatMessage, function(err, result) {
+        //  if (!err && result !== null && result === true) {
+        //    return callback(null, true);
+        //  }
+        //  return callback(err, false);
+        //});
       } else { // not valid message
         return callback(new Error('Message is not valid'), false);
       }

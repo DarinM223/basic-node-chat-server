@@ -9,9 +9,9 @@ var express = require('express');
 
 var router = express.Router();
 
-var usersController = require('../controllers/usersController.js');
-var groupController = require('../controllers/groupController.js');
-var authController = require('../controllers/authController.js');
+var usersController = require('../controllers/users_controller.js');
+var groupController = require('../controllers/groups_controller.js');
+var authController = require('../controllers/auth_controller.js');
 
 router.post('/', usersController.newUser);
 router.get('/:id', authController.isAuthenticated, usersController.getUser);

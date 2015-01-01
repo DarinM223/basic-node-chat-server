@@ -13,7 +13,7 @@ var socketManager = require('./socketManager.js');
  * Adds a new user
  * @param {string} username
  * @param {string} password
- * @param {fucntion(err,boolean)} callback
+ * @param {function(err,boolean)} callback
  */
 exports.insertUser = function(username, password, callback) {
   var newUser = new User({

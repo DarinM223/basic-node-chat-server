@@ -2,6 +2,8 @@
 
 var mongoose = require('mongoose');
 var encryption = require('../encryption.js');
+var Chat = require('./Chat.js');
+var redisClient = require('../redis/redisClient.js')();
 
 var UserSchema = mongoose.Schema({
   // enforce username uniqueness
@@ -37,6 +39,52 @@ UserSchema.pre('save', function(next) {
 UserSchema.methods.comparePassword = function(comparePassword, callback) {
   encryption.comparePassword(comparePassword, this.password, function(err, isPasswordMatch) {
     return callback(err, isPasswordMatch);
+  });
+};
+
+
+/**
+ * Adds a new user
+ * @param {string} username
+ * @param {string} password
+ * @param {function(err,boolean)} callback
+ */
+UserSchema.statics.new = function newUser(username, password, callback) {
+  var _user = new this({
+    'username': username,
+    'password': password
+  });
+  _user.save(function(err) {
+    if (err) {
+      // 11000 is uniqueness validation error for new objects
+      // 11001 is uniqueness validation error for existing objects
+      if (11000 === err.code || 11001 === err.code) {
+        return callback(null, false);
+      }
+      return callback(err, false);
+    }
+    return callback(null, true);
+  });
+};
+
+/**
+ * Verify if the username/password matches a user
+ * @param {string} username
+ * @param {string} password
+ * @param {function(err,User)} callback
+ */
+UserSchema.statics.verify = function verifyUser(username, password, callback) {
+  this.findOne({ 'username': username }, function(err, user) {
+    // if the username does not exist, return false
+    if (err || !user) {
+      return callback(err, null);
+    }
+    user.comparePassword(password, function(err, isPasswordMatch) {
+      if (isPasswordMatch) {
+        return callback(err, user);
+      }
+      return callback(err, null);
+    });
   });
 };
 
