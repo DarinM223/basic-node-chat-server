@@ -106,7 +106,6 @@ ChatSchema.statics.incrementUnreadMessages = function incrementUnreadMessages(us
       return callback(err, null);
     } 
 
-
     if (value === null) { 
       Chat.cacheUnreadMessages(userid, callback);
     } else { 

@@ -37,7 +37,15 @@ function onMessage(data, callback) {
       // if receiver is logged in publish to receiver's subscription
       redisSubClient.get('login:' + data.receiverId, function(err, value) {
         if (value !== null) { 
-          redisPubClient.publish('user:message:' + data.receiverId, { type: 'add', message: data });
+          if (data.receiverId) { // handle individual message
+            redisPubClient.publish('user:message:' + data.receiverId, { type: 'add', message: data });
+          } else if (data.groupId) { // handle group message
+            Group.findById(data.groupId, function(err, group) {
+              group.users.map(function(userid) {
+                redisPubClient.publish('user:message:' + userid, { type: 'add', message: data });
+              });
+            });
+          }
         } 
       });
     } else {

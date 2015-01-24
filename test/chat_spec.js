@@ -55,7 +55,6 @@ describe('Testing Chat functions', function() {
     });
 
     it('should update receivers unread messages in redis', function(done) {
-      console.log('user:unread:' + mongoose.Types.ObjectId('456789012345'));
       redisClient.get('user:unread:' + mongoose.Types.ObjectId('456789012345'), function(err, value) {
         value.should.equal(1);
         done();

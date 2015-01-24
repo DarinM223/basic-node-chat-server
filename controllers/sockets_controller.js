@@ -63,24 +63,7 @@ exports.handleUserLogin = function handleUserLogin(socketid, username, password,
  */
 function addUserToGroup(groupId, userId, callback) {
   Group.findById(groupId, function(err, group) {
-    if (group.createdUser.equals(mongoose.Types.ObjectId(userId))) {
-      return callback(null, false);
-    } else if (group.users.indexOf(mongoose.Types.ObjectId(userId)) > -1) {
-      return callback(null, false);
-    }
-    Group.update({ _id: mongoose.Types.ObjectId(groupId) }, {
-      $addToSet: {
-        users: userId
-      }
-    }, { multi: true }, function(err, numChanged) {
-      if (err) {
-        return callback(err, false);
-      }
-      if (numChanged === 1) {
-        return callback(null, true);
-      }
-      return callback(null, false);
-    });
+    group.addUser(userId, callback);
   });
 }
 
@@ -154,22 +137,14 @@ exports.handleMessage = function handleMessage(socketid, chatMessage, callback) 
     if (err) {
       return callback(err, false);
     } else if (value !== null) { // logged in
-      if (chatMessage.receiverId) { // if data is an individual message
+      if (chatMessage.receiverId || chatMessage.groupId) {
         Chat.new(chatMessage, function(err, result) {
           if (!err && result !== null) {
             return callback(null, true);
           }
           return callback(err, false);
         }); 
-      } else if (chatMessage.groupId) { // if data is a group message
-        // TODO: handle group messages
-        //redisManager.addGroupMessage(chatMessage, function(err, result) {
-        //  if (!err && result !== null && result === true) {
-        //    return callback(null, true);
-        //  }
-        //  return callback(err, false);
-        //});
-      } else { // not valid message
+      } else {
         return callback(new Error('Message is not valid'), false);
       }
     } else { // not logged in
