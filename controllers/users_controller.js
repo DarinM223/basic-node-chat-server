@@ -1,6 +1,7 @@
 'use strict';
 
-var User = require('../models/User.js');
+var User = require('../models/User.js')
+  , Group = require('../models/Group.js');
 
 /**
  * @method POST
@@ -62,6 +63,35 @@ exports.getUser = function(req, res) {
 exports.updateUser = function(req, res) {
   res.json({
     message: 'Not implemented yet'
+  });
+};
+
+/**
+ * @method POST
+ * @param params.id userid
+ * @param params.groupId
+ */
+exports.joinGroup = function(req, res) {
+  var group = Group.findById(req.param('groupId'), function(err, group) {
+    if (err || !group) {
+      res.json({
+        success: false,
+        error: 'Group does not exist!'
+      });
+    } else {
+      group.addUser(req.param('id'), function(err, result) {
+        if (err || !result) {
+          res.json({
+            success: false,
+            error: err+''
+          });
+        } else {
+          res.json({
+            success: true
+          });
+        }
+      });
+    }
   });
 };
 

@@ -68,7 +68,6 @@ module.exports = function(server) {
 
   io.sockets.on('connection', function(client) {
     client.on('user:login', onUserLogin.bind(client));
-    client.on('user:joingroup', onJoinGroup.bind(client));
     client.on('message', onMessage.bind(client));
     client.on('disconnect', onDisconnect.bind(client));
   });

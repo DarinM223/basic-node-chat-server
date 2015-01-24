@@ -19,9 +19,9 @@ var GroupSchema = new mongoose.Schema({
 GroupSchema.methods.addUser = function addUser(userid, callback) {
   var Group = this.model('Group');
   if (this.createdUser.equals(mongoose.Types.ObjectId(userid))) {
-    return callback(null, false);
+    return callback(new Error('User already in group'), false);
   } else if (this.users.indexOf(mongoose.Types.ObjectId(userid)) > -1) {
-    return callback(null, false);
+    return callback(new Error('User already in group'), false);
   }
   Group.update({ _id: mongoose.Types.ObjectId(this._id) }, {
     $addToSet: {

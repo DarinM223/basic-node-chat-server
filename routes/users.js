@@ -5,17 +5,16 @@
  * Route for /users
  */
 
-var express = require('express');
-
-var router = express.Router();
-
-var usersController = require('../controllers/users_controller.js');
-var groupController = require('../controllers/groups_controller.js');
-var authController = require('../controllers/auth_controller.js');
+var express = require('express')
+  , router = express.Router()
+  , usersController = require('../controllers/users_controller.js')
+  , groupController = require('../controllers/groups_controller.js')
+  , authController = require('../controllers/auth_controller.js');
 
 router.post('/', usersController.newUser);
 router.get('/:id', authController.isAuthenticated, usersController.getUser);
 router.put('/:id', authController.isAuthenticated, usersController.updateUser);
+router.post('/:id/:groupId', authController.isAuthenticated, usersController.joinGroup);
 router.delete('/:id', authController.isAuthenticated, usersController.deleteUser);
 
 router.route('/:id/groups/')
