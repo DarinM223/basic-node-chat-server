@@ -7,12 +7,11 @@ if (mongoose.connection.readyState === 0) {
 
 var redisClient = require('../redis/redisClient.js')(true); // test client
 
-var should = require('should');
-var Chat = require('../models/Chat.js');
-var User = require('../models/User.js');
-var Group = require('../models/Group.js');
-
-var async = require('async');
+var should = require('should')
+  , Chat = require('../models/Chat.js')
+  , User = require('../models/User.js')
+  , Group = require('../models/Group.js')
+  , async = require('async');
 
 describe('Testing Chat functions', function() {
   describe('Test Chat.new', function() {
@@ -56,6 +55,7 @@ describe('Testing Chat functions', function() {
     });
 
     it('should update receivers unread messages in redis', function(done) {
+      console.log('user:unread:' + mongoose.Types.ObjectId('456789012345'));
       redisClient.get('user:unread:' + mongoose.Types.ObjectId('456789012345'), function(err, value) {
         value.should.equal(1);
         done();

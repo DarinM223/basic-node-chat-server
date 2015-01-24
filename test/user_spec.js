@@ -5,8 +5,8 @@ if (mongoose.connection.readyState === 0) {
   mongoose.connect('mongodb://localhost:27017/test');
 }
 
-var should = require('should');
-var User = require('../models/User.js');
+var should = require('should')
+  , User = require('../models/User.js');
 
 describe('Testing User model', function() {
   beforeEach(function(done) {

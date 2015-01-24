@@ -5,13 +5,12 @@ if (mongoose.connection.readyState === 0) {
   mongoose.connect('mongodb://localhost:27017/test');
 }
 
-var should = require('should');
-var sockets = require('../controllers/sockets_controller.js');
-var redisClient = require('../redis/redisClient.js')(true);
-var socketManager = require('../socketManager.js');
-
-var User = require('../models/User.js');
-var Group = require('../models/Group.js');
+var should = require('should')
+  , sockets = require('../controllers/sockets_controller.js')
+  , redisClient = require('../redis/redisClient.js')(true)
+  , socketManager = require('../socketManager.js')
+  , User = require('../models/User.js')
+  , Group = require('../models/Group.js');
 
 describe('Testing sockets', function() {
 

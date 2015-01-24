@@ -1,7 +1,7 @@
 'use strict';
 
-var Group = require('../models/Group.js');
-var mongoose = require('mongoose');
+var Group = require('../models/Group.js')
+  , mongoose = require('mongoose');
 
 /**
  * @method POST

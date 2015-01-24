@@ -5,8 +5,8 @@ if (mongoose.connection.readyState === 0) {
   mongoose.connect('mongodb://localhost:27017/test');
 }
 
-var should = require('should');
-var Group = require('../models/Group.js');
+var should = require('should')
+  , Group = require('../models/Group.js');
 
 describe('Testing Group functions', function() {
   describe('Test Group.exists', function() {

@@ -7,13 +7,17 @@
  * sockets
  */
 
-var io = null;
-var redisPubClient = require('./redis/redisClient.js')();
-var redisSubClient = null;
-var sockets = require('./sockets.js');
+var io = null
+  , redisPubClient = require('./redis/redisClient.js')()
+  , redisSubClient = null
+  , socketController = require('./controllers/sockets_controller.js');
 
+/**
+ * @property {string} data.username
+ * @property {string} data.password
+ */
 function onUserLogin(data, callback) {
-  sockets.handleUserLogin(this.id, data.username, data.password, function(err, userid) {
+  socketController.handleUserLogin(this.id, data.username, data.password, function(err, userid) {
     if (!err && result !== null) {
       redisSubClient.subscribe('user:message:'+userid);
       return callback(null, data.username);
@@ -24,11 +28,11 @@ function onUserLogin(data, callback) {
 }
 
 function onJoinGroup(data, callback) {
-  sockets.handleJoinGroup(this.id, data.groupId, callback);
+  socketController.handleJoinGroup(this.id, data.groupId, callback);
 }
 
 function onMessage(data, callback) {
-  sockets.handleMessage(this.id, data, function(err, result) {
+  socketController.handleMessage(this.id, data, function(err, result) {
     if (!err && result !== null && result === true) {
       // if receiver is logged in publish to receiver's subscription
       redisSubClient.get('login:' + data.receiverId, function(err, value) {
@@ -43,7 +47,7 @@ function onMessage(data, callback) {
 }
 
 function onDisconnect() {
-  sockets.handleDisconnect(this.id, function(err, userid) {
+  socketController.handleDisconnect(this.id, function(err, userid) {
     // unsubscribe from user's messages
     redisSubClient.unsubscribe('user:message' + userid);
   });

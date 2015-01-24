@@ -1,7 +1,8 @@
 'use strict';
 
-var mongoose = require('mongoose');
-var redisClient = require('../redis/redisClient.js')();
+var mongoose = require('mongoose')
+  , redisClient = require('../redis/redisClient.js')()
+  , async = require('async');
 
 var ChatSchema = mongoose.Schema({
   senderId: { type: mongoose.Schema.Types.ObjectId, required: true },
@@ -46,15 +47,49 @@ ChatSchema.statics.new = function addMessage(message, callback) {
     groupId: message.groupId,
     message: message.message,
   });
+
   dbMessage.save(function(err, doc) {
     if (err) {
       return callback(err, null);
     } else if (!doc) {
       return callback(new Error('Error saving document'), null);
     }
+
     Chat.incrementUnreadMessages(doc.receiverId, function(err) {
       return callback(err, (err === null ? doc : null));
     });
+  });
+};
+
+/**
+ * @param {string} userid
+ * @param {function(err, integer)} callback returns count
+ */
+ChatSchema.statics.cacheUnreadMessages = function cacheUnreadMessages(userid, callback) {
+  var Chat = this;
+
+  Chat.find({ receiverId: userid, read: false }).count(function(err, count) {
+    if (err) {
+      return callback(err, null);
+    }
+
+    if (count === null) {
+      return callback(new Error('Error finding chat message count'), null);
+    }
+
+    redisClient.set('user:unread:' + mongoose.Types.ObjectId(userid), count, function(err) {
+      return callback(err, count);
+    });
+  });
+};
+
+/**
+ * @param {string} userid
+ * @param {function(err, integer)} callback returns count
+ */
+ChatSchema.statics.incrementCachedUnreadMessages = function incrementCachedUnreadMessages(userid, callback) {
+  redisClient.incr('user:unread:' + mongoose.Types.ObjectId(userid), function(err, newValue) {
+    return callback(err, newValue);
   });
 };
 
@@ -70,22 +105,12 @@ ChatSchema.statics.incrementUnreadMessages = function incrementUnreadMessages(us
     if (err) {
       return callback(err, null);
     } 
-    if (value === null) { // if unread messages is not cached in redis, cache it
-      Chat.find({ receiverId: userid, read: false }).count(function(err, count) {
-        if (err) {
-          return callback(err, null);
-        }
-        if (count === null) {
-          return callback(new Error('Error finding chat messages'), null);
-        }
-        redisClient.set('user:unread:' + userid, count, function(err) {
-          return callback(err, count);
-        });
-      });
-    } else { // otherwise, increment the cached value
-      redisClient.incr('user:unread:' + userid, function(err, newCount) {
-        return callback(err, newCount);
-      });
+
+
+    if (value === null) { 
+      Chat.cacheUnreadMessages(userid, callback);
+    } else { 
+      Chat.incrementCachedUnreadMessages(userid, callback);
     }
   });
 };

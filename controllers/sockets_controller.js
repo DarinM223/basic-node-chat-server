@@ -7,13 +7,11 @@
  * from the actual socket server
  */
 
-var User = require('../models/User.js');
-var socketManager = require('../socketManager.js');
-var Group = require('../models/Group.js');
-
-var mongoose = require('mongoose');
-
-var redisClient = require('../redis/redisClient.js')();
+var User = require('../models/User.js')
+  , socketManager = require('../socketManager.js')
+  , Group = require('../models/Group.js')
+  , mongoose = require('mongoose')
+  , redisClient = require('../redis/redisClient.js')();
 
 /**
  * Adds socketid/userid pairing and sets the redis login key

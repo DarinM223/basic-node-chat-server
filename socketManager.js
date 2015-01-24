@@ -4,8 +4,8 @@
  * Stores the currently connected sockets for a single server.
  */
 
-var sockid_to_userid = {};
-var userid_to_sockid = {};
+var sockid_to_userid = {}
+  , userid_to_sockid = {};
 
 /**
  * Adds a new socket-id/user-id key/value pair

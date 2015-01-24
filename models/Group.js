@@ -1,8 +1,8 @@
 'use strict';
 
-var mongoose = require('mongoose');
-var redisClient = require('../redis/redisClient.js')();
-var async = require('async');
+var mongoose = require('mongoose')
+  , redisClient = require('../redis/redisClient.js')()
+  , async = require('async');
 
 var GroupSchema = new mongoose.Schema({
   createdUser: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User'},

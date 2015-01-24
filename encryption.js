@@ -1,7 +1,7 @@
 /* @flow */
 'use strict';
-var bcrypt = require('bcrypt');
-var async = require('async');
+var bcrypt = require('bcrypt')
+  , async = require('async');
 
 /**
  * returns an encrypted version of the password

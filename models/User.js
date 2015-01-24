@@ -1,9 +1,9 @@
 'use strict';
 
-var mongoose = require('mongoose');
-var encryption = require('../encryption.js');
-var Chat = require('./Chat.js');
-var redisClient = require('../redis/redisClient.js')();
+var mongoose = require('mongoose')
+  , encryption = require('../encryption.js')
+  , Chat = require('./Chat.js')
+  , redisClient = require('../redis/redisClient.js')();
 
 var UserSchema = mongoose.Schema({
   // enforce username uniqueness

@@ -1,8 +1,8 @@
 'use strict'; 
 
-var should = require('should');
-var redisClient = require('../redis/redisClient.js')(true);
-var socketManager = require('../socketManager.js');
+var should = require('should')
+  , redisClient = require('../redis/redisClient.js')(true)
+  , socketManager = require('../socketManager.js');
 
 describe('Testing socketManager', function() {
   beforeEach(function(done) {

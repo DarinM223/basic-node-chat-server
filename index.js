@@ -1,11 +1,11 @@
 /* @flow */
 'use strict';
 
-var express = require('express');
-var app = express();
-var async = require('async');
-var mongoose = require('mongoose');
-var passport = require('passport');
+var express = require('express')
+  , app = express()
+  , async = require('async')
+  , mongoose = require('mongoose')
+  , passport = require('passport');
 
 var bodyParser = require('body-parser');
 
@@ -40,4 +40,7 @@ var port = 3700;
 mongoose.connect('mongodb://localhost:27017/mydb');
 
 // start sockets server
-// var sockets = require('./sockets.js')(app, port);
+var server = app.listen(3000, function() {
+  console.log('Server started at port 3000');
+});
+var socketServer = require('./socketServer.js')(server);

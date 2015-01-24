@@ -1,7 +1,7 @@
 'use strict';
 
-var should = require('should');
-var encryption = require('../encryption.js');
+var should = require('should')
+  , encryption = require('../encryption.js');
 
 describe('Encryption testing', function () {
   describe('Test encrypting and decrypting', function() {

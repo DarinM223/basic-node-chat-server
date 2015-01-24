@@ -1,8 +1,8 @@
 'use strict';
 
-var passport = require('passport');
-var User = require('../models/User.js');
-var BasicStrategy = require('passport-http').BasicStrategy;
+var passport = require('passport')
+  , User = require('../models/User.js')
+  , BasicStrategy = require('passport-http').BasicStrategy;
 
 passport.use(new BasicStrategy(
   function(username, password, callback) {
