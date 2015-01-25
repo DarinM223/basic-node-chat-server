@@ -8,39 +8,18 @@
  */
 
 var redisPubClient = require('./redis/redisClient.js')(false)
-  , redisSubClient = require('./redis/redisClient.js')(false, true)
-  , io = null
-  , socketManager = require('./socketManager.js')
   , socketController = require('./controllers/sockets_controller.js')
   , _ = require('underscore')
   , async = require('async')
   , mongoose = require('mongoose')
   , Group = require('./models/Group.js');
 
-function sendUserMessage(message) {
-  io.to(socketManager.getSocketId(message.message.receiverId)).emit('message', message);
-}
-/*
- * Message types:
- * message:userid
- * group:groupid
- */
-redisSubClient.on('message', function(channel, messageStr) {
-  var channelArgs = channel.split(':');
-  var message = JSON.parse(messageStr);
-  if (channelArgs.length === 3 && channelArgs[0] === 'user' && channelArgs[1] === 'message' && message.message.receiverId) {
-    if (socketManager.hasUserId(message.message.receiverId)) { // if this server contains the receiver, send through socket
-      sendUserMessage(message);
-    }
-  }  
-});
-
 /**
  * @property {string} data.username
  * @property {string} data.password
  * @param {function(err,string} callback returns the username of logged in user
  */
-function onUserLogin(data, callback) {
+function onUserLogin(redisSubClient, data, callback) {
   socketController.handleUserLogin(this.id, data.username, data.password, function(err, userid) {
     if (!err && userid !== null) {
       redisSubClient.subscribe('user:message:'+userid);
@@ -87,7 +66,7 @@ function onMessage(data, callback) {
   });
 }
 
-function onDisconnect() {
+function onDisconnect(redisSubClient) {
   socketController.handleDisconnect(this.id, function(err, userid) {
     // unsubscribe from user's messages
     redisSubClient.unsubscribe('user:message:' + userid);
@@ -95,12 +74,25 @@ function onDisconnect() {
 }
 
 module.exports = function(server) {
-  io = require('socket.io').listen(server);
+  var io = require('socket.io').listen(server)
+    , redisSubClient = require('./redis/redisClient.js')(false, true)
+    , socketManager = require('./socketManager.js');
+
+  redisSubClient.on('message', function(channel, messageStr) {
+    var channelArgs = channel.split(':');
+    var message = JSON.parse(messageStr);
+    if (channelArgs.length === 3 && channelArgs[0] === 'user' && 
+        channelArgs[1] === 'message' && message.message.receiverId) {
+      if (socketManager.hasUserId(message.message.receiverId)) { 
+        io.to(socketManager.getSocketId(message.message.receiverId)).emit('message', message);
+      }
+    }  
+  });
 
   io.sockets.on('connection', function(client) {
-    client.on('user:login', onUserLogin.bind(client));
+    client.on('user:login', onUserLogin.bind(client, redisSubClient));
     client.on('message', onMessage.bind(client));
-    client.on('disconnect', onDisconnect.bind(client));
+    client.on('disconnect', onDisconnect.bind(client, redisSubClient));
   });
   return io;
 };

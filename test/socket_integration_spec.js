@@ -104,8 +104,6 @@ describe('Testing socket server', function() {
       client1.disconnect();
       client2.disconnect();
       redisClient.flushdb();
-      User.remove({});
-      Group.remove({});
       done();
     });
 
@@ -124,7 +122,6 @@ describe('Testing socket server', function() {
     });
 
     it('should send message to both users if a user sends a group message', function(done) {
-      var one = false, two = false;
       client2.on('message', function(data) {
         data.message.message.should.equal('Hello world!');
       });
@@ -158,12 +155,35 @@ describe('Testing socket server', function() {
       // create two servers
       server1 = Server(4000);
       server2 = Server(3700);
-      sockets1 = socketServer(server1);
-      sockets2 = socketServer(server2);
+      sockets1 = require('../socketServer.js')(server1);
+      sockets2 = require('../socketServer.js')(server2);
       // create socket.io clients
-      client1 = io.connect('http://localhost:3000', options);
+      client1 = io.connect('http://localhost:4000', options);
       client2 = io.connect('http://localhost:3700', options);
-      done();
+
+      async.parallel([
+        function loginUser1(callback) {
+          client1.emit('user:login', {
+            username: 'testuser1',
+            password: 'hello'
+          }, function(err, username) {
+            username.should.equal('testuser1');
+            return callback(err, username);
+          });
+        },
+        function loginUser2(callback) {
+          client2.emit('user:login', {
+            username: 'testuser2',
+            password: 'hello'
+          }, function(err, username) {
+            username.should.equal('testuser2');
+            return callback(err, username);
+          });
+        }
+      ], function(err) {
+        if (err) console.log(err);
+        done();
+      });
     });
 
     after(function(done) {
@@ -171,15 +191,43 @@ describe('Testing socket server', function() {
       server2.close();
       client1.disconnect();
       client2.disconnect();
+      redisClient.flushdb();
       done();
     });
 
     it('should properly send message from socket.io client to the other', function(done) {
-      done();
+      client2.on('message', function(data) {
+        data.message.message.should.equal('Hello world!');
+        done();
+      });
+      client1.emit('message', {
+        senderId: user1._id,
+        receiverId: user2._id,
+        message: 'Hello world!'
+      }, function(err, result) {
+        if (err) console.log(err);
+      });
     });
 
     it('should send message to both users if a user sends a group message', function(done) {
-      done();
+      client2.on('message', function(data) {
+        data.message.message.should.equal('Hello world!');
+      });
+      client1.on('message', function(data) {
+        data.message.message.should.equal('Hello world!');
+      });
+
+      client1.emit('message', {
+        senderId: user1._id,
+        groupId: group1._id,
+        message: 'Hello world!'
+      }, function(err, result) {
+        if (err) console.log(err);
+      });
+
+      setTimeout(function() { 
+        done();
+      }, 1000);
     });
   });
 });
