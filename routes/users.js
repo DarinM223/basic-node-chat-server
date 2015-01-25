@@ -19,4 +19,4 @@ router.route('/:id')
 router.post('/:groupId/join', authController.isAuthenticated, usersController.joinGroup);
 router.get('/:id/groups', usersController.getGroups);
 
-module.exports = router;
+exports = module.exports = router;

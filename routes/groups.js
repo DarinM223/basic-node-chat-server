@@ -6,7 +6,7 @@ var express = require('express')
   , authController = require('../controllers/auth_controller.js');
 
 router.post('/', groupsController.newGroup);
-router.route('/:groupId')
+router.route('/:id')
       .get(groupsController.getGroup)
       .put(authController.isAuthenticated, groupsController.updateGroup)
       .delete(authController.isAuthenticated, groupsController.deleteGroup);
