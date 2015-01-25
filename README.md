@@ -1,27 +1,26 @@
-Basic chat client/server using Socket.io
-========================================
+Socket.io chat server
+=====================
 
-![Main Image](http://i.imgur.com/exhA9UP.png)
+A distributed chat server that supports groups. It consists of both a backend REST api with endpoints
+for CRUD operations for users and groups, and socket.io endpoints for sending and receiving messages.
 
-This is my first project using Node.js and Socket.io
+Because it uses redis pub/sub functionality to listen for incoming messages, it could scale to multiple servers if used with a load balancer. Each server only stores a portion of the total number of connected sockets and when that socket receives a message, it publishes the message to the redis channel and each server looks at the message and checks if they hold the socket that receives the message.
 
-Basic Functionality
--------------------
-Chat messages are shown in the list on the left and the most recent
-message is at the top. The labels on the private messages use the format
+Although this project has unit tests, the front end application hasn't been written (if you want to see a fully working chat application check out the old-version branch) 
 
-**[sender of message] [receiver of message] message**
-
-Logged in users other than yourself are shown in the list on the right.
-Clicking on a user and then sending a message will send a private message
-to that user only. You can select multiple users to send a message to.
+TODO:
+ * Make front end application
+ * Add edit message functionality
+ * Add group/user search
+ * Refactoring/fixing bugs
+ * Add more tests
 
 Installation
 ------------
 
-###Requirements: mongodb
+###Requirements: mongodb, redis
 
-###Tested on: Ubuntu 12.04, Ubuntu 14.04, Windows 8 64-bit
+###Tested on: OS X Yosemite, Ubuntu 14.04
 
 After you clone the repository, you need to install all of the dependencies first
 
@@ -32,8 +31,6 @@ After you clone the repository, you need to install all of the dependencies firs
 Finally, to run the chat server:
 
     node index.js
-
-Then open the browser and enter http://localhost:3700/
 
 There are other options to run the server. If you run the server using the
 **supervisor** plugin you won't need to restart the server whenever you make changes
