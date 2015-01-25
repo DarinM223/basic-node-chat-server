@@ -12,16 +12,11 @@ var express = require('express')
   , authController = require('../controllers/auth_controller.js');
 
 router.post('/', usersController.newUser);
-router.get('/:id', authController.isAuthenticated, usersController.getUser);
-router.put('/:id', authController.isAuthenticated, usersController.updateUser);
-router.post('/:id/:groupId', authController.isAuthenticated, usersController.joinGroup);
-router.delete('/:id', authController.isAuthenticated, usersController.deleteUser);
-
-router.route('/:id/groups/')
-  .post(authController.isAuthenticated, groupController.newGroup)
-  .get(authController.isAuthenticated, groupController.getGroups);
-router.route('/:id/groups/:groupId')
-  .put(authController.isAuthenticated, groupController.updateGroup)
-  .delete(authController.isAuthenticated, groupController.deleteGroup);
+router.route('/:id')
+      .get(usersController.getUser)
+      .put(authController.isAuthenticated, usersController.updateUser)
+      .delete(authController.isAuthenticated, usersController.deleteUser);
+router.post('/:groupId/join', authController.isAuthenticated, usersController.joinGroup);
+router.get('/:id/groups', usersController.getGroups);
 
 module.exports = router;

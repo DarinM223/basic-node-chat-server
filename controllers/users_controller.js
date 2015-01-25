@@ -68,7 +68,6 @@ exports.updateUser = function(req, res) {
 
 /**
  * @method POST
- * @param params.id userid
  * @param params.groupId
  */
 exports.joinGroup = function(req, res) {
@@ -79,7 +78,7 @@ exports.joinGroup = function(req, res) {
         error: 'Group does not exist!'
       });
     } else {
-      group.addUser(req.param('id'), function(err, result) {
+      group.addUser(req.user._id, function(err, result) {
         if (err || !result) {
           res.json({
             success: false,
@@ -90,6 +89,25 @@ exports.joinGroup = function(req, res) {
             success: true
           });
         }
+      });
+    }
+  });
+};
+
+/**
+ * @method GET
+ * @param params.id
+ */
+exports.getGroups = function(req, res) {
+  Group.find({ createdUser: req.param('id') }, function(err, docs) {
+    if (!err && docs) {
+      res.json({
+        success: true,
+        groups: docs
+      });
+    } else {
+      res.json({
+        success: false
       });
     }
   });

@@ -5,8 +5,6 @@ var Group = require('../models/Group.js')
 
 /**
  * @method POST
- * @param params.id
- * @param params.groupId
  * @param body.name
  */
 exports.newGroup = function(req, res) {
@@ -15,9 +13,9 @@ exports.newGroup = function(req, res) {
       success: false,
       error: 'You have specify a name for the group'
     });
-  } else if (req.user && req.user._id == req.param('id')) {
+  } else if (req.user && req.user._id) {
     var group = new Group({
-      createdUser: mongoose.Types.ObjectId(req.param('id')),
+      createdUser: mongoose.Types.ObjectId(req.user._id),
       name: req.body.name
     });
     group.save(function(err) {
@@ -40,29 +38,10 @@ exports.newGroup = function(req, res) {
 
 /**
  * @method GET
- * @param params.id
- */
-exports.getGroups = function(req, res) {
-  Group.find({ createdUser: req.param('id') }, function(err, docs) {
-    if (!err && docs) {
-      res.json({
-        success: true,
-        groups: docs
-      });
-    } else {
-      res.json({
-        success: false
-      });
-    }
-  });
-};
-
-/**
- * @method GET
- * @param params.groupid
+ * @param {string} params.id
  */
 exports.getGroup = function(req, res) {
-  Group.findOne({ '_id': req.param('groupId') }, function(err, group) {
+  Group.findOne({ '_id': req.param('id') }, function(err, group) {
     if (!err && group) {
       res.json({
         success: true,
@@ -77,29 +56,56 @@ exports.getGroup = function(req, res) {
 };
 
 /**
+ * @method GET
+ * @param {string} body.query query to search for
+ */
+exports.findGroup = function(req, res) {
+  // TODO: implement this
+  res.json({
+    message: 'Not implemented yet'
+  });
+};
+
+/**
  * @method PUT
- * @param params.id
- * @param params.groupId
+ * @param {string} params.id
  */
 exports.updateGroup = function(req, res) {
+  // TODO: implement this
   res.json({ message: 'Not implemented yet' });
 };
 
 /**
  * @method DELETE
- * @param params.id
- * @param params.groupId
+ * @param {string} params.id
  */
 exports.deleteGroup = function(req, res) {
-  if (req.user._id == req.param('id')) {
-    Group.remove({ '_id': req.param('groupId') }, true);
-    res.json({
-      success: true
-    });
-  } else {
+  var groupId = req.param('id');
+  if (groupId === null) {
     res.json({
       success: false,
-      error: 'You can only delete groups from your own user account!'
+      error: 'GroupId is not a parameter'
+    });
+  } else {
+    Group.findById(groupId, function(err, group) {
+      if (err || !group) {
+        res.json({
+          success: false,
+          error: 'Group does not exist'
+        });
+      } else {
+        if (group.createdUser == req.user._id) {
+          Group.remove({ '_id': groupId }, true);
+          res.json({
+            success: true
+          });
+        } else {
+          res.json({
+            success: false,
+            error: 'You can only delete groups from your own user account!'
+          });
+        }
+      }
     });
   }
 };

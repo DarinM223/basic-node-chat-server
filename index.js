@@ -24,10 +24,12 @@ app.set('views', __dirname + '/tpl');
 app.set('view engine', "jade");
 app.engine('jade', require('jade').__express);
 
-var users = require('./routes/users.js');
-var index = require('./routes/index.js');
+var users = require('./routes/users.js')
+  , groups = require('./routes/groups.js')
+  , index = require('./routes/index.js');
 
 app.use('/users', users);
+app.use('/groups', groups);
 app.use('/', index);
 
 // tell express to find where the public files needed for the html pages are

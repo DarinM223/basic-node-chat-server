@@ -11,6 +11,7 @@ var User = require('../models/User.js')
   , socketManager = require('../socketManager.js')
   , Group = require('../models/Group.js')
   , mongoose = require('mongoose')
+  , async = require('async')
   , redisClient = require('../redis/redisClient.js')();
 
 /**
@@ -35,94 +36,23 @@ function setLoginKey(socketid, userid, callback) {
  */
 exports.handleUserLogin = function handleUserLogin(socketid, username, password, callback) {
   // verify user from username and password
-  User.verify(username, password, function(err, user) {
-    if (err) {
-      return callback(err, false);
-    } else if (user) {
-      // check if user is already logged in through redis
+  async.waterfall([
+    function verifyUser(callback) {
+      User.verify(username, password, function(err, user) {
+        if (user === null) return callback(new Error('Your username or password was incorrect'));
+        return callback(err, user);
+      });
+    },
+    function checkLoggedIn(user, callback) {
       redisClient.get('login:' + user._id, function(err, value) {
-        if (err) { 
-          return callback(err, false);
-        } else if (value !== null || value === false) { // already logged in 
-          return callback(new Error('You have already logged in'), false);
-        } 
-        // not logged in
+        if (err) return callback(err);
+        if (value !== null || value === false) return callback(new Error('You have already logged in'), false);
+
         return setLoginKey(socketid, user._id, callback);
       });
-    } else {
-      return callback(new Error('Your username or password was incorrect'), false);
     }
-  });
-};
-
-/**
- * Adds a new user to a group
- * @param {string} groupId
- * @param {string} userId
- * @param {function(err,boolean)} callback
- */
-function addUserToGroup(groupId, userId, callback) {
-  Group.findById(groupId, function(err, group) {
-    group.addUser(userId, callback);
-  });
-}
-
-/**
- * @param {string} socketid
- * @param {string} groupId
- * @param {function(err,boolean)} callback
- */
-exports.handleJoinGroup = function handleJoinGroup(socketid, groupId, callback) {
-  var userid = socketManager.getUserId(socketid);
-
-  redisClient.get('login:' + userid, function(err, value) {
-    if (err) {
-      return callback(err, false);
-    } else if (value !== null) { // if logged in
-      Group.exists(groupId, function(err, result) {
-        if (!err && result) {
-          return addUserToGroup(groupId+'', userid+'', callback);
-        } else {
-          return callback(new Error('Group does not exist'), false);
-        }
-      });
-    } else {
-      return callback(new Error('You are not logged in'), false);
-    }
-  });
-};
-
-/**
- * @param {string} groupId
- * @param {string} userId
- * @param {function(err,boolean)} callback
- */
-function removeUserFromGroup(groupId, userId, callback) {
-  /**
-   * Remove user from the group
-   */
-}
-
-/**
- * @param {string} socketid
- * @param {string} groupId
- * @param {function(err,boolean)} callback}
- */
-exports.handleLeaveGroup = function handleLeaveGroup(socketid, groupId, callback) {
-  var userid = socketManager.getUserId(socketid);
-
-  redisClient.get('login:' + userid, function(err, value) {
-    if (err) {
-    } else if (value !== null) {
-      Group.exists(groupId, function(err, result) {
-        if (!err && result) {
-          return removeUserFromGroup(groupId+'', userid+'', callback);
-        } 
-        return callback(new Error('Group does not exist'), false);
-      });
-    } else {
-      return callback(new Error('You are not logged in'), false);
-    }
+  ], function(err, userid) {
+    return callback(err, userid);
   });
 };
 
@@ -133,23 +63,23 @@ exports.handleLeaveGroup = function handleLeaveGroup(socketid, groupId, callback
  */
 exports.handleMessage = function handleMessage(socketid, chatMessage, callback) {
   var userid = socketManager.getUserId(socketid);
-  redisClient.get('login:' + userid, function(err, value) {
-    if (err) {
-      return callback(err, false);
-    } else if (value !== null) { // logged in
+  async.waterfall([
+    function checkLoggedIn(callback) {
+      redisClient.get('login:' + userid, function(err, value) {
+        if (err) return callback(err);
+        if (value === null) return callback(new Error('You are not logged in'));
+        return callback(err, value);
+      });
+    },
+    function createMessage(value, callback) {
       if (chatMessage.receiverId || chatMessage.groupId) {
         Chat.new(chatMessage, function(err, result) {
-          if (!err && result !== null) {
-            return callback(null, true);
-          }
-          return callback(err, false);
-        }); 
-      } else {
-        return callback(new Error('Message is not valid'), false);
+          return callback(err, result);
+        });
       }
-    } else { // not logged in
-      return callback(new Error('You are not logged in'), false);
     }
+  ], function(err, result) {
+    return callback(err, result);
   });
 };
 
