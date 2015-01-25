@@ -1,4 +1,8 @@
-var redisClient = null, redisTestClient = null;
+var redisClient = null
+  , redisTestClient = null
+  , redisSubClient = null
+  , redisSubTestClient = null;
+
 var testing = false;
 
 /*
@@ -11,6 +15,8 @@ var testing = false;
 
 module.exports = function() {
   var test = arguments[0];
+  var sub = arguments[1];
+
   if (test !== null && test === true) {
     testing = true;
   } else if (test !== null && test === false) {
@@ -22,13 +28,31 @@ module.exports = function() {
       var _redis = require('fakeredis');
       redisTestClient = _redis.createClient();
     }
-    return redisTestClient;
+    if (redisSubTestClient === null) {
+      var _redis = require('fakeredis');
+      redisSubTestClient = _redis.createClient();
+    }
+
+    if (!sub) {
+      return redisTestClient;
+    } else {
+      return redisSubTestClient;
+    }
   } else {
     if (redisClient === null) {
       var _redis = require('redis');
       redisClient = _redis.createClient();
     }
-    return redisClient;
+    if (redisSubClient === null) {
+      var _redis = require('redis');
+      redisSubClient = _redis.createClient();
+    }
+
+    if (!sub) {
+      return redisClient;
+    } else {
+      return redisSubClient;
+    }
   }
 };
 

@@ -8,6 +8,7 @@
  */
 
 var User = require('../models/User.js')
+  , Chat = require('../models/Chat.js')
   , socketManager = require('../socketManager.js')
   , Group = require('../models/Group.js')
   , mongoose = require('mongoose')

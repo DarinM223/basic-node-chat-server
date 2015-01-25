@@ -24,7 +24,8 @@
     "socket.io": "*",
     "socket.io-client": "*",
     "supervisor": "*",
-    "underscore": "*"
+    "underscore": "*",
+    "superagent": "*"
   },
   "author": "developer"
 }
