@@ -5,18 +5,32 @@ if (mongoose.connection.readyState === 0) {
   mongoose.connect('mongodb://localhost:27017/test');
 }
 
+var options = {
+    transports: ['websocket'],
+    'force new connection': true
+};
+
 var should = require('should')
   , io = require('socket.io-client')
   , express = require('express')
   , app = express()
   , async = require('async')
+  , Server = require('../server.js')
   , socketServer = require('../socketServer.js');
 
 describe('Testing socket server', function() {
+  before(function(done) {
+    // create two users and a group and add the two users to the group
+    done();
+  });
   describe('Testing one server and two clients', function() {
     before(function(done) {
       // create server
+      var server = Server(3000);
+      var sockets = socketServer(server);
       // create socket.io clients
+      var client1 = io.connect('http://localhost:3000', options);
+      var client2 = io.connect('http://localhost:3000', options);
       // create new group and add the two clients to it
       done();
     });
