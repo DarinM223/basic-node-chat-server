@@ -78,8 +78,8 @@ exports.joinGroup = function(req, res) {
         error: 'Group does not exist!'
       });
     } else {
-      group.addUser(req.user._id, function(err, result) {
-        if (err || !result) {
+      group.addUser(req.user._id, function(err) {
+        if (err) {
           res.json({
             success: false,
             error: err+''

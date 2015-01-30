@@ -24,7 +24,7 @@ var User = require('../models/User.js')
  */
 function setLoginKey(socketid, userid, callback) {
   socketManager.addPairing(socketid, userid);
-  redisClient.set('login:' + userid, 1, function(err) {
+  redisClient.set('login:' + mongoose.Types.ObjectId(userid), 1, function(err) {
     return callback(err, userid);
   });
 }
@@ -47,7 +47,7 @@ exports.handleUserLogin = function handleUserLogin(socketid, username, password,
     function checkLoggedIn(user, callback) {
       redisClient.get('login:' + user._id, function(err, value) {
         if (err) return callback(err);
-        if (value !== null || value === false) return callback(new Error('You have already logged in'), false);
+        if (value !== null || value === 0) return callback(new Error('You have already logged in'), false);
 
         return setLoginKey(socketid, user._id, callback);
       });

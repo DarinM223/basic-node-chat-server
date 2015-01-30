@@ -5,12 +5,27 @@ if (mongoose.connection.readyState === 0) {
   mongoose.connect('mongodb://localhost:27017/test');
 }
 
+var redisClient = require('../redis/redisClient.js')(true); // test client
+
+var paths = [
+  '../controllers/sockets_controller.js'
+];
+
+// delete caches that might affect stuff
+for (var i = 0; i < paths.length; i++) {
+  var path = require.resolve(paths[i]);
+  if (require.cache[path]) {
+    console.log('Deleting ' + path);
+    delete require.cache[path];
+  }
+}
+
 var should = require('should')
   , sockets = require('../controllers/sockets_controller.js')
-  , redisClient = require('../redis/redisClient.js')(true)
   , socketManager = require('../socketManager.js')
   , User = require('../models/User.js')
   , Group = require('../models/Group.js');
+
 
 describe('Testing sockets', function() {
 

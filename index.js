@@ -4,11 +4,16 @@
 var Server = require('./server.js')
   , mongoose = require('mongoose');
 
-// connect to main database
-mongoose.connect('mongodb://localhost:27017/mydb');
-
-var server = Server(3000, function() {
-  console.log('Server started at port 3000');
-});
-
-var socketServer = require('./socketServer.js')(server);
+var port = process.argv[2];
+if (port === null) {
+  console.log('You must specify a port');
+} else {
+  // connect to main database
+  mongoose.connect('mongodb://localhost:27017/mydb');
+  
+  var server = Server(port, function() {
+    console.log('Server started at port ' + port);
+  });
+  
+  var socketServer = require('./socketServer.js')(server);
+}
