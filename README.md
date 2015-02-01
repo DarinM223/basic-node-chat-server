@@ -1,6 +1,8 @@
 Socket.io chat server
 =====================
 
+![Main Image](http://i.imgur.com/VtAYjFC.png)
+
 A distributed chat server that supports groups. It consists of both a backend REST api with endpoints
 for CRUD operations for users and groups, and socket.io endpoints for sending and receiving messages.
 
@@ -28,7 +30,11 @@ After you clone the repository, you need to install all of the dependencies firs
 
     npm install
 
-Finally, to run the chat server:
+Before you can run the chat server you must first run the redis server:
+
+    redis-server
+
+Then to run the chat server:
 
     node index.js
 
