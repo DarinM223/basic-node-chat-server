@@ -55,5 +55,3 @@ module.exports = function() {
     }
   }
 };
-
-// module.exports = redisClient;

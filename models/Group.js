@@ -8,8 +8,7 @@ var mongoose = require('mongoose')
 var GroupSchema = new mongoose.Schema({
   createdUser: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User'},
   name: { type: String, required: true },
-  created: { type: Date, default: Date.now },
-  users: [] 
+  created: { type: Date, default: Date.now }
 });
 
 /**

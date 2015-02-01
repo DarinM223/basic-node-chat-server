@@ -7,7 +7,20 @@
  * sockets
  */
 
-var redisPubClient = require('./redis/redisClient.js')(false)
+var paths = [
+  './controllers/sockets_controller.js'
+];
+
+// delete sockets controller cache that messes up testing
+for (var i = 0; i < paths.length; i++) {
+  var path = require.resolve(paths[i]);
+  if (require.cache[path]) {
+    delete require.cache[path];
+  }
+}
+
+var redisClient = require('./redis/redisClient.js')(false)
+  , redisPubClient = require('redis').createClient()
   , socketController = require('./controllers/sockets_controller.js')
   , _ = require('underscore')
   , async = require('async')
@@ -19,7 +32,7 @@ var redisPubClient = require('./redis/redisClient.js')(false)
  * @property {string} data.password
  * @param {function(err,string} callback returns the username of logged in user
  */
-function onUserLogin(redisSubClient, data, socketManager, callback) {
+function onUserLogin(redisSubClient, socketManager, data, callback) {
   socketController.handleUserLogin(this.id, data.username, data.password, socketManager, function(err, userid) {
     if (!err && userid !== null) {
       redisSubClient.subscribe('user:message:'+userid);
@@ -39,7 +52,7 @@ function sendToReceiver(data, callback) {
   });
 }
 
-function onMessage(data, socketManager, callback) {
+function onMessage(socketManager, data, callback) {
   socketController.handleMessage(this.id, data, socketManager, function(err, result) {
     if (!err) {
       if (data.receiverId) {
@@ -56,7 +69,7 @@ function onMessage(data, socketManager, callback) {
             userids.map(function(userid) {
               var newMessage = _.clone(data);
               newMessage.receiverId = userid;
-              sendToReceiver(message);
+              sendToReceiver(newMessage);
             });
             return callback(err);
           });
@@ -77,7 +90,7 @@ function onDisconnect(redisSubClient, socketManager) {
 
 module.exports = function(server) {
   var io = require('socket.io').listen(server)
-    , redisSubClient = require('./redis/redisClient.js')(false, true)
+    , redisSubClient = require('redis').createClient()
     , socketManager = require('./socketManager.js')();
 
   redisSubClient.on('message', function(channel, messageStr) {

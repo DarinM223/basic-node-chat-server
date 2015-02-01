@@ -49,11 +49,12 @@ describe('Testing socket server', function() {
         var group = new Group({
           createdUser: mongoose.Types.ObjectId(user1._id),
           name: 'New group',
-          users: [mongoose.Types.ObjectId(user2._id)]
         });
         group.save(function(err, doc) {
           group1 = doc;
-          done();
+          user2.joinGroup(group1._id, function(err) {
+            done();
+          });
         });
       });
     });
@@ -69,6 +70,10 @@ describe('Testing socket server', function() {
       // create server
       server = Server(3000);
       sockets = require('../socketServer.js')(server);
+      done();
+    });
+
+    beforeEach(function(done) {
       // create socket.io clients
       client1 = io.connect('http://localhost:3000', options);
       client2 = io.connect('http://localhost:3000', options);
@@ -100,9 +105,13 @@ describe('Testing socket server', function() {
 
     after(function(done) {
       server.close();
+      redisClient.flushdb();
+      done();
+    });
+
+    afterEach(function(done) {
       client1.disconnect();
       client2.disconnect();
-      redisClient.flushdb();
       done();
     });
 
@@ -121,22 +130,28 @@ describe('Testing socket server', function() {
     });
 
     it('should send message to both users if a user sends a group message', function(done) {
+      var client1Received = false
+        , client2Received = false;
       client2.on('message', function(data) {
-        data.message.message.should.equal('Hello world!');
+        data.message.message.should.equal('Hello group world!');
+        client2Received = true;
       });
       client1.on('message', function(data) {
-        data.message.message.should.equal('Hello world!');
+        data.message.message.should.equal('Hello group world!');
+        client1Received = true;
       });
 
       client1.emit('message', {
         senderId: user1._id,
         groupId: group1._id,
-        message: 'Hello world!'
+        message: 'Hello group world!'
       }, function(err, result) {
         if (err) console.log(err);
       });
 
       setTimeout(function() { 
+        client1Received.should.equal(true);
+        client2Received.should.equal(true);
         done();
       }, 1000);
     });
@@ -151,11 +166,15 @@ describe('Testing socket server', function() {
       , client2 = null;
 
     before(function(done) {
-      // create two servers
       server1 = Server(4000);
       server2 = Server(3700);
       sockets1 = require('../socketServer.js')(server1);
       sockets2 = require('../socketServer.js')(server2);
+      done();
+    });
+
+    beforeEach(function(done) {
+      // create two servers
       // create socket.io clients
       client1 = io.connect('http://localhost:4000', options);
       client2 = io.connect('http://localhost:3700', options);
@@ -188,9 +207,13 @@ describe('Testing socket server', function() {
     after(function(done) {
       server1.close();
       server2.close();
+      redisClient.flushdb();
+      done();
+    });
+
+    afterEach(function(done) {
       client1.disconnect();
       client2.disconnect();
-      redisClient.flushdb();
       done();
     });
 
@@ -209,22 +232,29 @@ describe('Testing socket server', function() {
     });
 
     it('should send message to both users if a user sends a group message', function(done) {
+      var client1Received = false
+        , client2Received = false;
+
       client2.on('message', function(data) {
-        data.message.message.should.equal('Hello world!');
+        data.message.message.should.equal('Hello group world!');
+        client2Received = true;
       });
       client1.on('message', function(data) {
-        data.message.message.should.equal('Hello world!');
+        data.message.message.should.equal('Hello group world!');
+        client1Received = true;
       });
 
       client1.emit('message', {
         senderId: user1._id,
         groupId: group1._id,
-        message: 'Hello world!'
+        message: 'Hello group world!'
       }, function(err, result) {
         if (err) console.log(err);
       });
 
       setTimeout(function() { 
+        client1Received.should.equal(true);
+        client2Received.should.equal(true);
         done();
       }, 1000);
     });
