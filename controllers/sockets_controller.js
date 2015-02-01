@@ -9,7 +9,6 @@
 
 var User = require('../models/User.js')
   , Chat = require('../models/Chat.js')
-  , socketManager = require('../socketManager.js')
   , Group = require('../models/Group.js')
   , mongoose = require('mongoose')
   , async = require('async')
@@ -20,9 +19,10 @@ var User = require('../models/User.js')
  * TODO: expire login key
  * @param {string} socketid
  * @param {string} userid
+ * @param {socketManager} socketManager
  * @param {function(err,string)} callback
  */
-function setLoginKey(socketid, userid, callback) {
+function setLoginKey(socketid, userid, socketManager, callback) {
   socketManager.addPairing(socketid, userid);
   redisClient.set('login:' + mongoose.Types.ObjectId(userid), 1, function(err) {
     return callback(err, userid);
@@ -33,9 +33,10 @@ function setLoginKey(socketid, userid, callback) {
  * @param {string} socketid
  * @param {string} username
  * @param {string} password
+ * @param {socketManager} socketManager
  * @param {function(err,string)} callback return the user id of the logged in user
  */
-exports.handleUserLogin = function handleUserLogin(socketid, username, password, callback) {
+exports.handleUserLogin = function handleUserLogin(socketid, username, password, socketManager, callback) {
   // verify user from username and password
   async.waterfall([
     function verifyUser(callback) {
@@ -49,7 +50,7 @@ exports.handleUserLogin = function handleUserLogin(socketid, username, password,
         if (err) return callback(err);
         if (value !== null || value === 0) return callback(new Error('You have already logged in'), false);
 
-        return setLoginKey(socketid, user._id, callback);
+        return setLoginKey(socketid, user._id, socketManager, callback);
       });
     }
   ], function(err, userid) {
@@ -62,7 +63,7 @@ exports.handleUserLogin = function handleUserLogin(socketid, username, password,
  * @param {Chat} chatMessage
  * @param {function(err,boolean)} callback
  */
-exports.handleMessage = function handleMessage(socketid, chatMessage, callback) {
+exports.handleMessage = function handleMessage(socketid, chatMessage, socketManager, callback) {
   var userid = socketManager.getUserId(socketid);
   async.waterfall([
     function checkLoggedIn(callback) {
@@ -88,7 +89,7 @@ exports.handleMessage = function handleMessage(socketid, chatMessage, callback) 
  * @param {string} socketid
  * @param {function(err,string)} callback returns the user id of the disconnected user
  */
-exports.handleDisconnect = function handleDisconnect(socketid, callback) {
+exports.handleDisconnect = function handleDisconnect(socketid, socketManager, callback) {
   if (socketManager.hasSocketId(socketid)) {
     var disconnected_uid = socketManager.getUserId(socketid);
     socketManager.removePairing(socketid);
@@ -102,7 +103,7 @@ exports.handleDisconnect = function handleDisconnect(socketid, callback) {
   }
 };
 
-exports.resetEverything = function resetEverything() {
+exports.resetEverything = function resetEverything(socketManager) {
   User.collection.remove({}, function(err, result) {});
   socketManager.reset();
 };

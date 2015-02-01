@@ -22,7 +22,7 @@ for (var i = 0; i < paths.length; i++) {
 
 var should = require('should')
   , sockets = require('../controllers/sockets_controller.js')
-  , socketManager = require('../socketManager.js')
+  , socketManager = require('../socketManager.js')()
   , User = require('../models/User.js')
   , Group = require('../models/Group.js');
 
@@ -37,7 +37,7 @@ describe('Testing sockets', function() {
       socketManager.reset();
 
       User.new('newuser', 'hello', function(err, success) {
-        sockets.handleUserLogin('1234', 'newuser', 'hello', function(err, userid) {
+        sockets.handleUserLogin('1234', 'newuser', 'hello', socketManager, function(err, userid) {
           (err === null).should.be.true;
           (userid !== null).should.be.true;
           _userid = userid;
@@ -49,7 +49,7 @@ describe('Testing sockets', function() {
     after(function(done) {
       redisClient.flushdb();
       socketManager.reset();
-      sockets.resetEverything();
+      sockets.resetEverything(socketManager);
       done();
     });
 
@@ -64,7 +64,7 @@ describe('Testing sockets', function() {
     });
 
     it('should display error if already logged in', function(done) {
-      sockets.handleUserLogin('1234', 'newuser', 'hello', function(err, userid) {
+      sockets.handleUserLogin('1234', 'newuser', 'hello', socketManager, function(err, userid) {
         err.message.should.equal('You have already logged in');
         done();
       });
@@ -94,7 +94,7 @@ describe('Testing sockets', function() {
 
       // create and log in test user
       User.new('newuser', 'hello', function(err, success) {
-        sockets.handleUserLogin('1234', 'newuser', 'hello', function(err, userid) {
+        sockets.handleUserLogin('1234', 'newuser', 'hello', socketManager, function(err, userid) {
           (err === null).should.be.true;
           _userid = userid;
           done();
@@ -112,21 +112,22 @@ describe('Testing sockets', function() {
     });
 
     it('should fail if there is no socket id', function(done) {
-      sockets.handleDisconnect('4567', function(err, disconnected_uid) {
+      sockets.handleDisconnect('4567', socketManager, function(err, disconnected_uid) {
         err.message.should.equal('There is no user associated with this socket id');
         (disconnected_uid === null).should.be.true;
         done();
       });
     });
 
-    it('should remove the login key in redis', function(done) {
+    it('should remove the login key and socket manager k/v pair in redis', function(done) {
       redisClient.get('login:' + _userid, function(err, result) {
         (err === null).should.be.true;
         result.should.equal(1);
-        sockets.handleDisconnect('1234', function(err, disconnected_uid) {
+        sockets.handleDisconnect('1234', socketManager, function(err, disconnected_uid) {
           redisClient.get('login:' + _userid, function(err, result) {
             (err === null).should.be.true;
             (result === null).should.be.true;
+            socketManager.hasSocketId('1234').should.be.false;
             done();
           });
         });

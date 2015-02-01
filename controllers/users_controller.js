@@ -71,24 +71,15 @@ exports.updateUser = function(req, res) {
  * @param params.groupId
  */
 exports.joinGroup = function(req, res) {
-  var group = Group.findById(req.param('groupId'), function(err, group) {
-    if (err || !group) {
+  req.user.joinGroup(req.param('groupId'), function(err) {
+    if (err) {
       res.json({
         success: false,
-        error: 'Group does not exist!'
+        error: err+''
       });
     } else {
-      group.addUser(req.user._id, function(err) {
-        if (err) {
-          res.json({
-            success: false,
-            error: err+''
-          });
-        } else {
-          res.json({
-            success: true
-          });
-        }
+      res.json({
+        success: true
       });
     }
   });

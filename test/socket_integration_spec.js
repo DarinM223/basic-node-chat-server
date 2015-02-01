@@ -20,8 +20,7 @@ var should = require('should')
   , request = require('superagent')
   , Server = require('../server.js')
   , User = require('../models/User.js')
-  , Group = require('../models/Group.js')
-  , socketServer = require('../socketServer.js');
+  , Group = require('../models/Group.js');
 
 describe('Testing socket server', function() {
   var user1 = null
@@ -69,7 +68,7 @@ describe('Testing socket server', function() {
     before(function(done) {
       // create server
       server = Server(3000);
-      sockets = socketServer(server);
+      sockets = require('../socketServer.js')(server);
       // create socket.io clients
       client1 = io.connect('http://localhost:3000', options);
       client2 = io.connect('http://localhost:3000', options);

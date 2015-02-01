@@ -2,7 +2,7 @@
 
 var should = require('should')
   , redisClient = require('../redis/redisClient.js')(true)
-  , socketManager = require('../socketManager.js');
+  , socketManager = require('../socketManager.js')();
 
 describe('Testing socketManager', function() {
   beforeEach(function(done) {

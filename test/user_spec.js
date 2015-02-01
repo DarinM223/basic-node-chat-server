@@ -6,7 +6,10 @@ if (mongoose.connection.readyState === 0) {
 }
 
 var should = require('should')
-  , User = require('../models/User.js');
+  , User = require('../models/User.js')
+  , JoinedUser = require('../models/JoinedUser.js')
+  , Group = require('../models/Group.js')
+  , async = require('async');
 
 describe('Testing User model', function() {
   beforeEach(function(done) {
@@ -76,6 +79,88 @@ describe('Testing User model', function() {
           (user !== null).should.be.true;
           return done();
         });
+      });
+    });
+  });
+
+  describe('Test joining group', function() {
+    it('should add new entry to JoinedUser collection', function(done) {
+      async.waterfall([
+        function(callback) {
+          User.new('test_user', 'hello', function(err, isSuccess) {
+            isSuccess.should.equal(true);
+            callback(err);
+          });
+        },
+        function(callback) {
+          User.verify('test_user', 'hello', function(err, user) {
+            (user !== null).should.be.true;
+            return callback(err, user);
+          });
+        },
+        function(user, callback) {
+          user.joinGroup('123456789012', function(err) {
+            return callback(err, user);
+          });
+        },
+        function(user, callback) {
+          user.joinedGroups(function(err, groupids) {
+            groupids.length.should.equal(1);
+            groupids[0].equals(mongoose.Types.ObjectId('123456789012')).should.be.true;
+            return callback(err);
+          });
+        }
+      ], function(err) {
+        if (err !== null) console.log(err);
+        done();
+      });
+    });
+  });
+
+  describe('Test getting created groups', function() {
+    it('should return all created group ids', function(done) {
+      async.waterfall([
+        function(callback) {
+          User.new('test_user', 'hello', function(err, isSuccess) {
+            isSuccess.should.be.true;
+            return callback(err);
+          });
+        },
+        function(callback) {
+          User.verify('test_user', 'hello', function(err, user) {
+            (user !== null).should.be.true;
+            return callback(err, user);
+          });
+        },
+        function(user, callback) {
+          var group1 = new Group({
+            createdUser: user._id,
+            name: 'Group 1'
+          });
+          group1.save(function(err) {
+            return callback(err, user, group1);
+          });
+        },
+        function(user, group1, callback) {
+          var group2 = new Group({
+            createdUser: user._id,
+            name: 'Group 2'
+          });
+          group2.save(function(err) {
+            return callback(err, user, group1, group2);
+          });
+        },
+        function(user, group1, group2, callback) {
+          user.createdGroups(function(err, groupids) {
+            groupids.length.should.equal(2);
+            groupids[0].equals(group1._id).should.be.true;
+            groupids[1].equals(group2._id).should.be.true;
+            return callback(err);
+          });
+        }
+      ], function(err) {
+        if (err !== null) console.log(err);
+        done();
       });
     });
   });

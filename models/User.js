@@ -3,6 +3,8 @@
 var mongoose = require('mongoose')
   , encryption = require('../encryption.js')
   , Chat = require('./Chat.js')
+  , Group = require('./Group.js')
+  , JoinedUser = require('./JoinedUser.js')
   , redisClient = require('../redis/redisClient.js')();
 
 var UserSchema = mongoose.Schema({
@@ -10,7 +12,6 @@ var UserSchema = mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   created: { type: Date, default: Date.now },
-  joinedGroups: []
 });
 
 UserSchema.pre('save', function(next) {
@@ -35,7 +36,6 @@ UserSchema.pre('save', function(next) {
  * compares a password to the user's hashed password
  * @param {string} comparePassword
  * @param {function(err, boolean)} callback
- * @return {function(err, boolean)}
  */
 UserSchema.methods.comparePassword = function(comparePassword, callback) {
   encryption.comparePassword(comparePassword, this.password, function(err, isPasswordMatch) {
@@ -43,6 +43,40 @@ UserSchema.methods.comparePassword = function(comparePassword, callback) {
   });
 };
 
+/**
+ * joins a new group
+ * @param {string} groupid the id of the group to join
+ * @param {function(err)} callback 
+ */
+UserSchema.methods.joinGroup = function(groupid, callback) {
+  var newJoinedUser = new JoinedUser({
+    userId: this._id,
+    groupId: mongoose.Types.ObjectId(groupid)
+  });
+  newJoinedUser.save(function(err) {
+    return callback(err);
+  });
+};
+
+/**
+ * returns a list of groups that the user created
+ * @param {function(err, Array.<ObjectId>)} callback returns an array of group ids 
+ */
+UserSchema.methods.createdGroups = function(callback) {
+  Group.find({ createdUser: this._id }, function(err, docs) {
+    return callback(err, docs.map(function(doc) { return doc._id; }));
+  });
+};
+
+/**
+ * returns a list of groups that the user joined
+ * @param {function(err, Array.<ObjectId>)} callback returns an array of group ids
+ */
+UserSchema.methods.joinedGroups = function(callback) {
+  JoinedUser.find({ userId: this._id }, function(err, docs) {
+    return callback(err, docs.map(function(doc) { return doc.groupId; }));
+  });
+};
 
 /**
  * Adds a new user
