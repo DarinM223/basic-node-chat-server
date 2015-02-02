@@ -5,24 +5,13 @@ if (mongoose.connection.readyState === 0) {
   mongoose.connect('mongodb://localhost:27017/test');
 }
 
-var redisClient = require('../redis/redisClient.js')(true); // test client
-
-var paths = [
-  '../controllers/sockets_controller.js'
-];
-
-// delete caches that might affect stuff
-for (var i = 0; i < paths.length; i++) {
-  var path = require.resolve(paths[i]);
-  if (require.cache[path]) {
-    console.log('Deleting ' + path);
-    delete require.cache[path];
-  }
-}
+var redisClient = require('../redis/redisClient.js')(false); // test client
 
 var should = require('should')
-  , sockets = require('../controllers/sockets_controller.js')
-  , socketManager = require('../socketManager.js')()
+  , SocketManager = require('../socketManager.js')
+  , socketManager = new SocketManager()
+  , SocketsController = require('../controllers/sockets_controller.js')
+  , sockets = new SocketsController(socketManager)
   , User = require('../models/User.js')
   , Group = require('../models/Group.js');
 
@@ -37,7 +26,7 @@ describe('Testing sockets', function() {
       socketManager.reset();
 
       User.new('newuser', 'hello', function(err, success) {
-        sockets.handleUserLogin('1234', 'newuser', 'hello', socketManager, function(err, userid) {
+        sockets.handleUserLogin('1234', 'newuser', 'hello', function(err, userid) {
           (err === null).should.be.true;
           (userid !== null).should.be.true;
           _userid = userid;
@@ -49,7 +38,7 @@ describe('Testing sockets', function() {
     after(function(done) {
       redisClient.flushdb();
       socketManager.reset();
-      sockets.resetEverything(socketManager);
+      sockets.resetEverything();
       done();
     });
 
@@ -64,7 +53,7 @@ describe('Testing sockets', function() {
     });
 
     it('should display error if already logged in', function(done) {
-      sockets.handleUserLogin('1234', 'newuser', 'hello', socketManager, function(err, userid) {
+      sockets.handleUserLogin('1234', 'newuser', 'hello', function(err, userid) {
         err.message.should.equal('You have already logged in');
         done();
       });
@@ -72,7 +61,7 @@ describe('Testing sockets', function() {
 
     it('should set login key', function(done) {
       redisClient.get('login:' + _userid, function(err, result) {
-        result.should.equal(1);
+        JSON.parse(result).should.equal(1);
         done();
       });
     });
@@ -94,7 +83,7 @@ describe('Testing sockets', function() {
 
       // create and log in test user
       User.new('newuser', 'hello', function(err, success) {
-        sockets.handleUserLogin('1234', 'newuser', 'hello', socketManager, function(err, userid) {
+        sockets.handleUserLogin('1234', 'newuser', 'hello', function(err, userid) {
           (err === null).should.be.true;
           _userid = userid;
           done();
@@ -112,7 +101,7 @@ describe('Testing sockets', function() {
     });
 
     it('should fail if there is no socket id', function(done) {
-      sockets.handleDisconnect('4567', socketManager, function(err, disconnected_uid) {
+      sockets.handleDisconnect('4567', function(err, disconnected_uid) {
         err.message.should.equal('There is no user associated with this socket id');
         (disconnected_uid === null).should.be.true;
         done();
@@ -122,8 +111,8 @@ describe('Testing sockets', function() {
     it('should remove the login key and socket manager k/v pair in redis', function(done) {
       redisClient.get('login:' + _userid, function(err, result) {
         (err === null).should.be.true;
-        result.should.equal(1);
-        sockets.handleDisconnect('1234', socketManager, function(err, disconnected_uid) {
+        JSON.parse(result).should.equal(1);
+        sockets.handleDisconnect('1234', function(err, disconnected_uid) {
           redisClient.get('login:' + _userid, function(err, result) {
             (err === null).should.be.true;
             (result === null).should.be.true;

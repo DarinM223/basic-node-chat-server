@@ -101,6 +101,4 @@ SocketManager.prototype.reset = function() {
   this.userid_to_sockid = {};
 };
 
-module.exports = function() {
-  return new SocketManager;
-};
+module.exports = SocketManager;

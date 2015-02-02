@@ -2,7 +2,8 @@
 
 var should = require('should')
   , redisClient = require('../redis/redisClient.js')(true)
-  , socketManager = require('../socketManager.js')();
+  , SocketManager = require('../SocketManager.js')
+  , socketManager = new SocketManager();
 
 describe('Testing socketManager', function() {
   beforeEach(function(done) {

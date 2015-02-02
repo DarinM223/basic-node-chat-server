@@ -4,7 +4,8 @@ var express = require('express')
   , app = express()
   , async = require('async')
   , bodyParser = require('body-parser')
-  , passport = require('passport');
+  , passport = require('passport')
+  , SocketServer = require('./SocketServer.js');
 
 var bodyParser = require('body-parser');
 
@@ -32,6 +33,14 @@ app.use('/', index);
 app.use(express.static(__dirname + '/public'));
 
 module.exports = function(port, callback) {
-  var server = app.listen(port, callback);
+  var server = app.listen(port, callback)
+    , io = require('socket.io').listen(server)
+    , socketServer = new SocketServer(io);
+
+  io.sockets.on('connection', function(client) {
+    client.on('user:login', socketServer.onUserLogin.bind(socketServer, client));
+    client.on('message', socketServer.onMessage.bind(socketServer, client));
+    client.on('disconnect', socketServer.onDisconnect.bind(socketServer, client));
+  });
   return server;
 };

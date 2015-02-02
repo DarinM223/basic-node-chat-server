@@ -69,7 +69,6 @@ describe('Testing socket server', function() {
     before(function(done) {
       // create server
       server = Server(3000);
-      sockets = require('../socketServer.js')(server);
       done();
     });
 
@@ -168,8 +167,6 @@ describe('Testing socket server', function() {
     before(function(done) {
       server1 = Server(4000);
       server2 = Server(3700);
-      sockets1 = require('../socketServer.js')(server1);
-      sockets2 = require('../socketServer.js')(server2);
       done();
     });
 

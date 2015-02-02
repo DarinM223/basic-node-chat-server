@@ -1,7 +1,8 @@
 'use strict';
 
 var User = require('../models/User.js')
-  , Group = require('../models/Group.js');
+  , Group = require('../models/Group.js')
+  , async = require('async');
 
 /**
  * @method POST
@@ -99,6 +100,35 @@ exports.getGroups = function(req, res) {
     } else {
       res.json({
         success: false
+      });
+    }
+  });
+};
+
+/**
+ * @method GET
+ * @param params.id
+ */
+exports.getJoinedGroups = function(req, res) {
+  User.findById(req.param('id'), function(err, user) {
+    if (err) {
+      res.json({
+        success: false,
+        error: 'User does not exist!'
+      });
+    } else {
+      async.map(user.joinedGroups, Group.findById, function(err, groups) {
+        if (err) {
+          res.json({
+            success: false,
+            error: 'Error finding joined groups!'
+          });
+        } else {
+          res.json({
+            success: true,
+            groups: groups
+          });
+        }
       });
     }
   });
