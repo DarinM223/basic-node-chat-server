@@ -39,25 +39,29 @@ SocketsController.prototype._setLoginKey = function(socketid, userid, callback) 
  * @param {function(err,string)} callback return the user id of the logged in user
  */
 SocketsController.prototype.handleUserLogin = function(socketid, username, password, callback) {
+  var that = this;
+
+  var verifyUser = function(callback) {
+    User.verify(username, password, function(err, user) {
+      if (user === null) return callback(new Error('Your username or password was incorrect'));
+      return callback(err, user);
+    });
+  };
+
+  var checkLoggedIn = function(user, callback) {
+    that.redisClient.get('login:' + user._id, function(err, value) {
+      if (err) return callback(err);
+      if (value !== null || value === 0) return callback(new Error('You have already logged in'));
+
+      return that._setLoginKey(socketid, user._id, callback);
+    });
+  };
+
   // verify user from username and password
   async.waterfall([
-    function verifyUser(callback) {
-      User.verify(username, password, function(err, user) {
-        if (user === null) return callback(new Error('Your username or password was incorrect'));
-        return callback(err, user);
-      });
-    },
-    function checkLoggedIn(user, callback) {
-      this.redisClient.get('login:' + user._id, function(err, value) {
-        if (err) return callback(err);
-        if (value !== null || value === 0) return callback(new Error('You have already logged in'), false);
-
-        return this._setLoginKey(socketid, user._id, callback);
-      }.bind(this));
-    }.bind(this)
-  ], function(err, userid) {
-    return callback(err, userid);
-  });
+    verifyUser,
+    checkLoggedIn
+  ], callback);
 };
 
 /**
@@ -66,25 +70,27 @@ SocketsController.prototype.handleUserLogin = function(socketid, username, passw
  * @param {function(err,boolean)} callback
  */
 SocketsController.prototype.handleMessage = function(socketid, chatMessage, callback) {
+  var that = this;
+
   var userid = this.socketManager.getUserId(socketid);
-  async.waterfall([
-    function checkLoggedIn(callback) {
-      this.redisClient.get('login:' + userid, function(err, value) {
-        if (err) return callback(err);
-        if (value === null) return callback(new Error('You are not logged in'));
-        return callback(err, value);
-      });
-    }.bind(this),
-    function createMessage(value, callback) {
-      if (chatMessage.receiverId || chatMessage.groupId) {
-        Chat.new(chatMessage, function(err, result) {
-          return callback(err, result);
-        });
-      }
+
+  var checkLoggedIn = function(callback) {
+    that.redisClient.get('login:' + userid, function(err, value) {
+      if (value === null) return callback(new Error('You are not logged in'));
+      return callback(err);
+    });
+  };
+
+  var createMessage = function(callback) {
+    if (chatMessage.receiverId || chatMessage.groupId) {
+      Chat.new(chatMessage, callback);
     }
-  ], function(err, result) {
-    return callback(err, result);
-  });
+  };
+
+  async.waterfall([
+    checkLoggedIn,
+    createMessage
+  ], callback);
 };
 
 /**

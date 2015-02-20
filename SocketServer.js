@@ -41,64 +41,72 @@ SocketServer.prototype.handleMessage = function(channel, messageStr) {
  * @param {function(err,string} callback returns the username of logged in user
  */
 SocketServer.prototype.onUserLogin = function(client, data, callback) {
+  var that = this;
+
   this.socketController.handleUserLogin(client.id, data.username, data.password, function(err, userid) {
     if (!err && userid !== null) {
-      this.redisSubClient.subscribe('user:message:'+userid);
+      that.redisSubClient.subscribe('user:message:'+userid);
       return callback(null, data.username);
     } else {
       return callback(err);
     }
-  }.bind(this));
+  });
 };
 
 SocketServer.prototype._sendToReceiver = function(data, callback) {
+  var that = this;
+
   this.redisPubClient.get('login:' + data.receiverId, function(err, value) {
     if (value !== null) {
-      this.redisPubClient.publish('user:message:' + data.receiverId, JSON.stringify({ type: 'add', message: data }));
+      that.redisPubClient.publish('user:message:' + data.receiverId, JSON.stringify({ type: 'add', message: data }));
     }
     if (callback) return callback(err);
-  }.bind(this));
+  });
 };
 
 SocketServer.prototype.onMessage = function(client, data, callback) {
+  var that = this;
+
   this.socketController.handleMessage(client.id, data, function(err, result) {
     if (err) return callback(err);
 
     if (data.receiverId) {
-      return this._sendToReceiver(data, callback);
+      return that._sendToReceiver(data, callback);
     }
 
     if (data.groupId) {
       var sendToUser = function(userid, callback) {
         var message = _.clone(data);
         message.receiverId = userid;
-        this._sendToReceiver(message, callback);
-      }.bind(this);
+        that._sendToReceiver(message, callback);
+      };
 
       var sendToJoinedUsers = function(userids, callback) {
         async.map(userids, sendToUser, callback);
-      }.bind(this);
+      };
 
       Group.findById(data.groupId, function(err, group) {
         if (err) return callback(err);
 
         async.waterfall([
-          sendToUser.bind(this, group.createdUser),
+          sendToUser.bind(that, group.createdUser),
           group.joinedUsers.bind(group),
           sendToJoinedUsers
         ], function(err) {
           return callback(err);
         });
-      }.bind(this));
+      });
     }
-  }.bind(this));
+  });
 };
 
 SocketServer.prototype.onDisconnect = function(client) {
+  var that = this;
+
   this.socketController.handleDisconnect(client.id, function(err, userid) {
     // unsubscribe from user's messages
-    this.redisSubClient.unsubscribe('user:message:' + userid);
-  }.bind(this));
+    that.redisSubClient.unsubscribe('user:message:' + userid);
+  });
 };
 
 module.exports = SocketServer;
