@@ -8,33 +8,34 @@ if (mongoose.connection.readyState === 0) {
 var redisClient = require('../redis/redisClient.js')(false); // test client
 
 var should = require('should')
-  , SocketManager = require('../socketManager.js')
+  , Promise = require('bluebird')
+  , SocketManager = require('../SocketManager.js')
   , socketManager = new SocketManager()
   , SocketsController = require('../controllers/sockets_controller.js')
-  , sockets = new SocketsController(socketManager)
-  , User = require('../models/User.js')
+  , sockets = Promise.promisifyAll(new SocketsController(socketManager))
+  , User = Promise.promisifyAll(require('../models/User.js'))
   , Group = require('../models/Group.js');
 
+redisClient = Promise.promisifyAll(redisClient);
 
 describe('Testing sockets', function() {
-
-
   describe('Test handleUserLogin', function() {
     var _userid = null;
     before(function(done) {
       redisClient.flushdb();
       socketManager.reset();
 
-      User.new('newuser', 'hello', function(err, success) {
-        sockets.handleUserLogin('1234', 'newuser', 'hello', function(err, userid) {
-          (err === null).should.be.true;
-          (userid !== null).should.be.true;
-          _userid = userid;
-          done();
-        });
+      User.newAsync('newuser', 'hello').then(function(success) {
+        return sockets.handleUserLoginAsync('1234', 'newuser', 'hello');
+      }).then(function(userid) {
+        (userid !== null).should.be.true;
+        _userid = userid;
+        done();
+      }).catch(function(e) {
+        console.log(e);
       });
-
     });
+
     after(function(done) {
       redisClient.flushdb();
       socketManager.reset();
@@ -81,13 +82,13 @@ describe('Testing sockets', function() {
       redisClient.flushdb();
       socketManager.reset();
 
-      // create and log in test user
-      User.new('newuser', 'hello', function(err, success) {
-        sockets.handleUserLogin('1234', 'newuser', 'hello', function(err, userid) {
-          (err === null).should.be.true;
-          _userid = userid;
-          done();
-        });
+      User.newAsync('newuser', 'hello').then(function(success) {
+        return sockets.handleUserLoginAsync('1234', 'newuser', 'hello');
+      }).then(function(userid) {
+        _userid = userid;
+        done();
+      }).catch(function(e) {
+        console.log(e);
       });
     });
 
@@ -109,17 +110,17 @@ describe('Testing sockets', function() {
     });
 
     it('should remove the login key and socket manager k/v pair in redis', function(done) {
-      redisClient.get('login:' + _userid, function(err, result) {
-        (err === null).should.be.true;
+      redisClient.getAsync('login:' + _userid).then(function(result) {
         JSON.parse(result).should.equal(1);
-        sockets.handleDisconnect('1234', function(err, disconnected_uid) {
-          redisClient.get('login:' + _userid, function(err, result) {
-            (err === null).should.be.true;
-            (result === null).should.be.true;
-            socketManager.hasSocketId('1234').should.be.false;
-            done();
-          });
-        });
+        return sockets.handleDisconnectAsync('1234');
+      }).then(function() {
+        return redisClient.getAsync('login:' + _userid);
+      }).then(function(result) {
+        (result === null).should.be.true;
+        socketManager.hasSocketId('1234').should.be.false;
+        done();
+      }).catch(function(e) {
+        console.log(e);
       });
     });
   });

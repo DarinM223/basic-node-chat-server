@@ -17,15 +17,12 @@
     "mocha": "*",
     "mongodb": "*",
     "mongoose": "*",
-    "passport": "*",
-    "passport-http": "*",
     "redis": "*",
     "should": "*",
     "socket.io": "*",
     "socket.io-client": "*",
     "supervisor": "*",
-    "underscore": "*",
-    "superagent": "*"
+    "underscore": "*"
   },
   "author": "developer"
 }
