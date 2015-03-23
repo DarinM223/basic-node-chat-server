@@ -1,5 +1,6 @@
 'use strict';
 
+var expect = require('chai').expect;
 
 describe('Testing redisClient', function() {
   var testingClient = null, normalClient = null;
@@ -11,28 +12,28 @@ describe('Testing redisClient', function() {
   it('should return the same instance of normalClient if testing is off', function() {
     if (testingClient !== null && normalClient !== null) {
       var anotherClient = require('../redis/redisClient.js')(false);
-      (anotherClient == normalClient).should.equal(true);
+      expect(anotherClient == normalClient).to.equal(true);
     }
   });
 
   it('should not return the same instance of testingClient if testing is off', function() {
     if (testingClient !== null && normalClient !== null) {
       var anotherClient = require('../redis/redisClient.js')(false);
-      (anotherClient == testingClient).should.equal(false);
+      expect(anotherClient == testingClient).to.equal(false);
     }
   });
 
   it('should return the same instance of testingClient if testing is on', function() {
     if (testingClient !== null && normalClient !== null) {
       var testClient = require('../redis/redisClient.js')(true);
-      (testClient == testingClient).should.equal(true);
+      expect(testClient == testingClient).to.equal(true);
     }
   });
 
   it('should not return the same instance of normalClient if testing is on', function() {
     if (testingClient !== null && normalClient !== null) {
       var testClient = require('../redis/redisClient.js')(true);
-      (testClient == normalClient).should.equal(false);
+      expect(testClient == normalClient).to.equal(false);
     }
   });
 });

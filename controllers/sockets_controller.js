@@ -61,7 +61,9 @@ SocketsController.prototype.handleUserLogin = function(socketid, username, passw
   async.waterfall([
     verifyUser,
     checkLoggedIn
-  ], callback);
+  ], function(err, userid) {
+    callback(err, userid);
+  });
 };
 
 /**

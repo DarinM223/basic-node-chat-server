@@ -7,7 +7,7 @@ if (mongoose.connection.readyState === 0) {
 
 var redisClient = require('../redis/redisClient.js')(true); // test client
 
-var should = require('should')
+var expect = require('chai').expect
   , Promise = require('bluebird')
   , Chat = Promise.promisifyAll(require('../models/Chat.js'))
   , User = require('../models/User.js')
@@ -33,7 +33,7 @@ describe('Testing Chat functions', function() {
 
         return Chat.newAsync(message);
       }).then(function(result) {
-        (result !== null).should.be.true;
+        expect(result).to.not.be.a('null');
         messageid = result;
         done();
       }).catch(function(e) {
@@ -51,10 +51,10 @@ describe('Testing Chat functions', function() {
 
     it('should add message to mongodb', function(done) {
       Chat.findByIdAsync(messageid).then(function(doc) {
-        mongoose.Types.ObjectId(doc.receiverId).equals(mongoose.Types.ObjectId('456789012345')).should.be.true;
-        mongoose.Types.ObjectId(doc.senderId).equals(mongoose.Types.ObjectId('123456789012')).should.be.true;
-        (doc.groupId === null).should.be.true;
-        doc.message.should.equal('New message');
+        expect(mongoose.Types.ObjectId(doc.receiverId).equals(mongoose.Types.ObjectId('456789012345'))).to.equal(true);
+        expect(mongoose.Types.ObjectId(doc.senderId).equals(mongoose.Types.ObjectId('123456789012'))).to.equal(true);
+        expect(doc.groupId).to.be.a('null');
+        expect(doc.message).to.equal('New message');
         done();
       }).catch(function(e) {
         console.log(e);
@@ -63,7 +63,7 @@ describe('Testing Chat functions', function() {
 
     it('should update receivers unread messages in redis', function(done) {
       redisClient.getAsync('user:unread:' + mongoose.Types.ObjectId('456789012345')).then(function(value) {
-        value.should.equal(1);
+        expect(value).to.equal(1);
         done();
       }).catch(function(e) {
         console.log(e);
@@ -87,13 +87,13 @@ describe('Testing Chat functions', function() {
 
         return Chat.newAsync(message);
       }).then(function(addedMessage) {
-        (addedMessage !== null).should.be.true;
+        expect(addedMessage).to.not.be.a('null');
         messageid = addedMessage._id;
 
         var editAsync = Promise.promisify(addedMessage.edit.bind(addedMessage));
         return editAsync('Changed message');
       }).then(function(result) {
-        result.should.be.true;
+        expect(result).to.equal(true);
         done();
       }).catch(function(e) {
         console.log(e);
@@ -109,10 +109,10 @@ describe('Testing Chat functions', function() {
 
     it('should update the message in mongodb', function(done) {
       Chat.findByIdAsync(messageid).then(function(doc) {
-        mongoose.Types.ObjectId(doc.receiverId).equals(mongoose.Types.ObjectId('456789012345')).should.be.true;
-        mongoose.Types.ObjectId(doc.senderId).equals(mongoose.Types.ObjectId('123456789012')).should.be.true;
-        (doc.groupId === null).should.be.true;
-        doc.message.should.equal('Changed message');
+        expect(mongoose.Types.ObjectId(doc.receiverId).equals(mongoose.Types.ObjectId('456789012345'))).to.equal(true);
+        expect(mongoose.Types.ObjectId(doc.senderId).equals(mongoose.Types.ObjectId('123456789012'))).to.equal(true);
+        expect(doc.groupId).to.be.a('null');
+        expect(doc.message).to.equal('Changed message');
         done();
       }).catch(function(e) {
         console.log(e);

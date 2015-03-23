@@ -12,12 +12,11 @@ var options = {
 
 var redisClient = require('../redis/redisClient.js')(false); // test client
 
-var should = require('should')
+var expect = require('chai').expect
   , io = require('socket.io-client')
   , express = require('express')
   , app = express()
   , async = require('async')
-  , request = require('superagent')
   , Server = require('../server.js')
   , User = require('../models/User.js')
   , Group = require('../models/Group.js');
@@ -26,37 +25,76 @@ describe('Testing socket server', function() {
   var user1 = null
     , user2 = null
     , group1 = null;
+
+  function createUser(username, password, callback) {
+    User.new(username, password, callback);
+  }
+
+  function getUser(username, callback) {
+    User.findOne({ username: username }, callback);
+  }
+
+  function saveGroup(group, callback) {
+    group.save(function(err, doc) {
+      callback(err, doc);
+    });
+  }
+
+  // create two users and a group and add the two users to the group
   before(function(done) {
-    // create two users and a group and add the two users to the group
-    async.parallel([
-      function createUser1(callback) {
-        User.new('testuser1', 'hello', callback);
-      }, 
-      function createUser2(callback) {
-        User.new('testuser2', 'hello', callback);
-      },
-    ], function(err) {
+    /**
+     * Creates two users with usernames 'testuser1' and 'testuser2'
+     * @param {function(err)} callback
+     */
+    function createUsers(callback) {
       async.parallel([
-        function getUser1(callback) {
-          User.findOne({ username: 'testuser1' }, callback);
-        },
-        function getUser2(callback) {
-          User.findOne({ username: 'testuser2' }, callback);
-        }
+        createUser.bind(null, 'testuser1', 'hello'),
+        createUser.bind(null, 'testuser2', 'hello')
+      ], function(err) {
+        callback(err);
+      });
+    }
+
+    /**
+     * Retrieves and returns the users 'testuser1' and 'testuser2'
+     * @param {function(err, user1, user2)} callback
+     */
+    function getUsers(callback) {
+      async.parallel([
+        getUser.bind(null, 'testuser1'),
+        getUser.bind(null, 'testuser2')
       ], function(err, results) {
         user1 = results[0];
         user2 = results[1];
-        var group = new Group({
-          createdUser: mongoose.Types.ObjectId(user1._id),
-          name: 'New group',
-        });
-        group.save(function(err, doc) {
-          group1 = doc;
-          user2.joinGroup(group1._id, function(err) {
-            done();
-          });
-        });
+        callback(err, results[0], results[1]);
       });
+    }
+
+    /**
+     * User1 creates a new group and user2 joins to the group
+     * @param {function(err)} callback
+     */
+    function createGroup(user1, user2, callback) {
+      var group = new Group({
+        createdUser: mongoose.Types.ObjectId(user1._id),
+        name: 'New group'
+      });
+
+      async.waterfall([
+        saveGroup.bind(null, group),
+        function joinGroup(group, callback) {
+          group1 = group;
+          user2.joinGroup(group1._id, callback);
+        }
+      ], function(err) {
+        expect(err).to.be.a('null');
+        callback(err);
+      });
+    }
+
+    async.waterfall([ createUsers, getUsers, createGroup ], function(err) {
+      expect(err).to.be.a('null');
+      done();
     });
   });
 
@@ -69,6 +107,7 @@ describe('Testing socket server', function() {
     before(function(done) {
       // create server
       server = Server(3000);
+      redisClient.flushdb();
       done();
     });
 
@@ -83,7 +122,7 @@ describe('Testing socket server', function() {
             username: 'testuser1',
             password: 'hello'
           }, function(err, username) {
-            username.should.equal('testuser1');
+            expect(username).to.equal('testuser1');
             return callback(err, username);
           });
         },
@@ -92,7 +131,7 @@ describe('Testing socket server', function() {
             username: 'testuser2',
             password: 'hello'
           }, function(err, username) {
-            username.should.equal('testuser2');
+            expect(username).to.equal('testuser2');
             return callback(err, username);
           });
         }
@@ -116,7 +155,7 @@ describe('Testing socket server', function() {
 
     it('should properly send message from one socket.io client to the other', function(done) {
       client2.on('message', function(data) {
-        data.message.message.should.equal('Hello world!');
+        expect(data.message.message).to.equal('Hello world!');
         done();
       });
       client1.emit('message', {
@@ -132,11 +171,11 @@ describe('Testing socket server', function() {
       var client1Received = false
         , client2Received = false;
       client2.on('message', function(data) {
-        data.message.message.should.equal('Hello group world!');
+        expect(data.message.message).to.equal('Hello group world!');
         client2Received = true;
       });
       client1.on('message', function(data) {
-        data.message.message.should.equal('Hello group world!');
+        expect(data.message.message).to.equal('Hello group world!');
         client1Received = true;
       });
 
@@ -149,8 +188,8 @@ describe('Testing socket server', function() {
       });
 
       setTimeout(function() { 
-        client1Received.should.equal(true);
-        client2Received.should.equal(true);
+        expect(client1Received).to.equal(true);
+        expect(client2Received).to.equal(true);
         done();
       }, 1000);
     });
@@ -167,8 +206,10 @@ describe('Testing socket server', function() {
     before(function(done) {
       server1 = Server(4000);
       server2 = Server(3700);
+      redisClient.flushdb();
       done();
     });
+
 
     beforeEach(function(done) {
       // create two servers
@@ -182,7 +223,7 @@ describe('Testing socket server', function() {
             username: 'testuser1',
             password: 'hello'
           }, function(err, username) {
-            username.should.equal('testuser1');
+            expect(username).to.equal('testuser1');
             return callback(err, username);
           });
         },
@@ -191,7 +232,7 @@ describe('Testing socket server', function() {
             username: 'testuser2',
             password: 'hello'
           }, function(err, username) {
-            username.should.equal('testuser2');
+            expect(username).to.equal('testuser2');
             return callback(err, username);
           });
         }
@@ -216,7 +257,7 @@ describe('Testing socket server', function() {
 
     it('should properly send message from socket.io client to the other', function(done) {
       client2.on('message', function(data) {
-        data.message.message.should.equal('Hello world!');
+        expect(data.message.message).to.equal('Hello world!');
         done();
       });
       client1.emit('message', {
@@ -233,11 +274,11 @@ describe('Testing socket server', function() {
         , client2Received = false;
 
       client2.on('message', function(data) {
-        data.message.message.should.equal('Hello group world!');
+        expect(data.message.message).to.equal('Hello group world!');
         client2Received = true;
       });
       client1.on('message', function(data) {
-        data.message.message.should.equal('Hello group world!');
+        expect(data.message.message).to.equal('Hello group world!');
         client1Received = true;
       });
 
@@ -250,8 +291,8 @@ describe('Testing socket server', function() {
       });
 
       setTimeout(function() { 
-        client1Received.should.equal(true);
-        client2Received.should.equal(true);
+        expect(client1Received).to.equal(true);
+        expect(client2Received).to.equal(true);
         done();
       }, 1000);
     });

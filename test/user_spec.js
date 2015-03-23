@@ -5,7 +5,7 @@ if (mongoose.connection.readyState === 0) {
   mongoose.connect('mongodb://localhost:27017/test');
 }
 
-var should = require('should')
+var expect = require('chai').expect
   , Promise = require('bluebird')
   , User = Promise.promisifyAll(require('../models/User.js'))
   , JoinedUser = require('../models/JoinedUser.js')
@@ -23,18 +23,18 @@ describe('Testing User model', function() {
   describe('Test valid insertion', function() {
     it('should properly hash password and insert user', function(done) {
       User.findAsync({}).then(function(docs) {
-        docs.length.should.equal(0);
+        expect(docs.length).to.equal(0);
         return User.newAsync('test_user', 'hello');
       }).then(function(success) {
-        success.should.equal(true);
+        expect(success).to.equal(true);
         return User.findAsync({});
       }).then(function(docs) {
-        docs.length.should.equal(1);
-        docs[0].username.should.equal('test_user');
+        expect(docs.length).to.equal(1);
+        expect(docs[0].username).to.equal('test_user');
         var comparePasswordAsync = Promise.promisify(docs[0].comparePassword.bind(docs[0]));
         return comparePasswordAsync('hello');
       }).then(function(isPasswordMatch) {
-        isPasswordMatch.should.equal(true);
+        expect(isPasswordMatch).to.equal(true);
         done();
       }).catch(function(e) {
         console.log(e);
@@ -45,10 +45,10 @@ describe('Testing User model', function() {
   describe('Test invalid insertion', function() {
     it('should prevent from inserting same username twice', function(done) {
       User.newAsync('test_user', 'hello').then(function(success) {
-        success.should.equal(true);
+        expect(success).to.equal(true);
         return User.newAsync('test_user', 'world');
       }).then(function(success) {
-        success.should.equal(false);
+        expect(success).to.equal(false);
         done();
       }).catch(function(e) {
         console.log(e);
@@ -59,7 +59,7 @@ describe('Testing User model', function() {
   describe('Test verification of user that does not exist', function() {
     it('should return false', function(done) {
       User.verify('test_user', 'hello', function(err, user) {
-        (user === null).should.equal(true);
+        expect(user).to.be.a('null');
         return done();
       });
     });
@@ -68,10 +68,10 @@ describe('Testing User model', function() {
   describe('Test entering wrong password for user', function() {
     it('should return false', function(done) {
       User.newAsync('test_user', 'hello').then(function(success) {
-        success.should.equal(true);
+        expect(success).to.equal(true);
         return User.verifyAsync('test_user', 'world');
       }).then(function(user) {
-        (user === null).should.be.true;
+        expect(user).to.be.a('null');
         done();
       }).catch(function(e) {
         console.log(e);
@@ -82,10 +82,10 @@ describe('Testing User model', function() {
   describe('Test valid verification', function() {
     it('should insert user into database and correctly check password', function(done) {
       User.newAsync('test_user', 'hello').then(function(success) {
-        success.should.equal(true);
+        expect(success).to.equal(true);
         return User.verifyAsync('test_user', 'hello');
       }).then(function(user) {
-        (user !== null).should.be.true;
+        expect(user).to.not.be.a('null');
         done();
       }).catch(function(e) {
         console.log(e);
@@ -97,10 +97,10 @@ describe('Testing User model', function() {
     it('should add new entry to JoinedUser collection', function(done) {
       var myUser = null;
       User.newAsync('test_user', 'hello').then(function(success) {
-        success.should.equal(true);
+        expect(success).to.equal(true);
         return User.verifyAsync('test_user', 'hello');
       }).then(function(user) {
-        (user !== null).should.be.true;
+        expect(user).to.not.be.a('null');
         myUser = user;
         var joinGroupAsync = Promise.promisify(user.joinGroup.bind(user));
         return joinGroupAsync('123456789012');
@@ -108,8 +108,8 @@ describe('Testing User model', function() {
         var joinedGroupsAsync = Promise.promisify(myUser.joinedGroups.bind(myUser));
         return joinedGroupsAsync();
       }).then(function(groupids) {
-        groupids.length.should.equal(1);
-        groupids[0].equals(mongoose.Types.ObjectId('123456789012')).should.be.true;
+        expect(groupids.length).to.equal(1);
+        expect(groupids[0].equals(mongoose.Types.ObjectId('123456789012'))).to.equal(true);
         done();
       }).catch(function(e) {
         console.log(e);
@@ -121,10 +121,10 @@ describe('Testing User model', function() {
     it('should return all created group ids', function(done) {
       var myUser = null, group1 = null, group2 = null;
       User.newAsync('test_user', 'hello').then(function(success) {
-        success.should.be.true;
+        expect(success).to.equal(true);
         return User.verifyAsync('test_user', 'hello');
       }).then(function(user) {
-        (user !== null).should.be.true;
+        expect(user).to.not.be.a('null');
         myUser = user;
         group1 = new Group({
           createdUser: myUser._id,
@@ -143,9 +143,9 @@ describe('Testing User model', function() {
         var createdGroupsAsync = Promise.promisify(myUser.createdGroups.bind(myUser));
         return createdGroupsAsync();
       }).then(function(groupids) {
-        groupids.length.should.equal(2);
-        groupids[0].equals(group1._id).should.be.true;
-        groupids[1].equals(group2._id).should.be.true;
+        expect(groupids.length).to.equal(2);
+        expect(groupids[0].equals(group1._id)).to.equal(true);
+        expect(groupids[1].equals(group2._id)).to.equal(true);
         done();
       }).catch(function(e) {
         console.log(e);

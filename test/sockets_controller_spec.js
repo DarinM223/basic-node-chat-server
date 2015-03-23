@@ -7,7 +7,7 @@ if (mongoose.connection.readyState === 0) {
 
 var redisClient = require('../redis/redisClient.js')(false); // test client
 
-var should = require('should')
+var expect = require('chai').expect
   , Promise = require('bluebird')
   , SocketManager = require('../SocketManager.js')
   , socketManager = new SocketManager()
@@ -28,7 +28,7 @@ describe('Testing sockets', function() {
       User.newAsync('newuser', 'hello').then(function(success) {
         return sockets.handleUserLoginAsync('1234', 'newuser', 'hello');
       }).then(function(userid) {
-        (userid !== null).should.be.true;
+        expect(userid).to.not.be.a('null');
         _userid = userid;
         done();
       }).catch(function(e) {
@@ -48,21 +48,21 @@ describe('Testing sockets', function() {
      */
 
     it('should add socket manager k/v pair', function(done) {
-      socketManager.hasSocketId('1234').should.be.true;
-      socketManager.getUserId('1234').should.equal(_userid);
+      expect(socketManager.hasSocketId('1234')).to.equal(true);
+      expect(socketManager.getUserId('1234')).to.equal(_userid);
       done();
     });
 
     it('should display error if already logged in', function(done) {
       sockets.handleUserLogin('1234', 'newuser', 'hello', function(err, userid) {
-        err.message.should.equal('You have already logged in');
+        expect(err.message).to.equal('You have already logged in');
         done();
       });
     });
 
     it('should set login key', function(done) {
       redisClient.get('login:' + _userid, function(err, result) {
-        JSON.parse(result).should.equal(1);
+        expect(JSON.parse(result)).to.equal(1);
         done();
       });
     });
@@ -103,21 +103,21 @@ describe('Testing sockets', function() {
 
     it('should fail if there is no socket id', function(done) {
       sockets.handleDisconnect('4567', function(err, disconnected_uid) {
-        err.message.should.equal('There is no user associated with this socket id');
-        (disconnected_uid === null).should.be.true;
+        expect(err.message).to.equal('There is no user associated with this socket id');
+        expect(disconnected_uid).to.be.a('null');
         done();
       });
     });
 
     it('should remove the login key and socket manager k/v pair in redis', function(done) {
       redisClient.getAsync('login:' + _userid).then(function(result) {
-        JSON.parse(result).should.equal(1);
+        expect(JSON.parse(result)).to.equal(1);
         return sockets.handleDisconnectAsync('1234');
       }).then(function() {
         return redisClient.getAsync('login:' + _userid);
       }).then(function(result) {
-        (result === null).should.be.true;
-        socketManager.hasSocketId('1234').should.be.false;
+        expect(result).to.be.a('null');
+        expect(socketManager.hasSocketId('1234')).to.equal(false);
         done();
       }).catch(function(e) {
         console.log(e);

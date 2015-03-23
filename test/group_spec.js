@@ -5,7 +5,7 @@ if (mongoose.connection.readyState === 0) {
   mongoose.connect('mongodb://localhost:27017/test');
 }
 
-var should = require('should')
+var expect = require('chai').expect
   , Group = require('../models/Group.js');
 
 describe('Testing Group functions', function() {
@@ -19,7 +19,7 @@ describe('Testing Group functions', function() {
             name: 'New group',
         });
         group.save(function(err, doc) {
-          (err === null).should.be.true;
+          expect(err).to.be.a('null');
           groupid = doc._id;
           done();
         });
@@ -33,7 +33,7 @@ describe('Testing Group functions', function() {
 
     it('should return true if there is a group', function(done) {
       Group.exists(groupid, function(err, result) {
-        result.should.be.true;
+        expect(result).to.equal(true);
         done();
       });
     });
@@ -41,7 +41,7 @@ describe('Testing Group functions', function() {
     it('should return false if there is not a group', function(done) {
       Group.remove({}, function(err, result) {
         Group.exists(groupid, function(err, result) {
-          result.should.be.false;
+          expect(result).to.equal(false);
           done();
         });
       });
